@@ -21,7 +21,7 @@ extern int  autoDetectSatFrom; // [0..256]
 extern int  autoDetectSatTo;   // [0..256]
 extern int  autoDetectValFrom; // [0..256]
 extern int  autoDetectValTo;   // [0..256]
-extern int  autoZeroMass;
+extern int  zeroMass;
 
 typedef struct CodecEngineConfig // what user wants to set
 {

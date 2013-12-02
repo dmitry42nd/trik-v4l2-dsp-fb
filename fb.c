@@ -178,23 +178,23 @@ int fbOutputFini()
 
 int fbOutputOpen(FBOutput* _fb, const FBConfig* _config)
 {
-  int ret = 0;
+  int res = 0;
 
   if (_fb == NULL)
     return EINVAL;
   if (_fb->m_fd != -1)
     return EALREADY;
 
-  ret = do_fbOutputOpen(_fb, _config->m_path);
-  if (ret != 0)
+  res = do_fbOutputOpen(_fb, _config->m_path);
+  if (res != 0)
     goto exit;
 
-  ret = do_fbOutputSetFormat(_fb);
-  if (ret != 0)
+  res = do_fbOutputSetFormat(_fb);
+  if (res != 0)
     goto exit_close;
 
-  ret = do_fbOutputMmap(_fb);
-  if (ret != 0)
+  res = do_fbOutputMmap(_fb);
+  if (res != 0)
     goto exit_unset_format;
 
   return 0;
@@ -205,7 +205,7 @@ int fbOutputOpen(FBOutput* _fb, const FBConfig* _config)
  exit_close:
   do_fbOutputClose(_fb);
  exit:
-  return ret;
+  return res;
 }
 
 int fbOutputClose(FBOutput* _fb)
