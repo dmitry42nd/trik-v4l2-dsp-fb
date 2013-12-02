@@ -9,10 +9,10 @@
 
 #include <linux/videodev2.h>
 
-#include <trik/vidtranscode_resample/trik_vidtranscode_resample.h>
+//#include <trik/vidtranscode_resample/trik_vidtranscode_resample.h>
+#include <trik/vidtranscode_cv/trik_vidtranscode_cv.h>
 
 #include "internal/ce.h"
-
 
 #warning Check BUFALIGN usage!
 #ifndef BUFALIGN
@@ -20,7 +20,6 @@
 #endif
 
 #define ALIGN_UP(v, a) ((((v)+(a)-1)/(a))*(a))
-
 
 static int do_memoryAlloc(CodecEngine* _ce, size_t _srcBufferSize, size_t _dstBufferSize)
 {
@@ -43,6 +42,22 @@ static int do_memoryAlloc(CodecEngine* _ce, size_t _srcBufferSize, size_t _dstBu
   {
     fprintf(stderr, "Memory_alloc(dst, %zu) failed\n", _ce->m_dstBufferSize);
     _ce->m_dstBufferSize = 0;
+
+    Memory_free(_ce->m_srcBuffer, _ce->m_srcBufferSize, &_ce->m_allocParams);
+    _ce->m_srcBuffer = NULL;
+    _ce->m_srcBufferSize = 0;
+    return ENOMEM;
+  }
+
+  _ce->m_dstInfoBufferSize = ALIGN_UP(1000, BUFALIGN);
+  if ((_ce->m_dstInfoBuffer = Memory_alloc(_ce->m_dstInfoBufferSize, &_ce->m_allocParams)) == NULL)
+  {
+    fprintf(stderr, "Memory_alloc(dst, %zu) failed\n", _ce->m_dstInfoBufferSize);
+    _ce->m_dstInfoBufferSize = 0;
+
+    Memory_free(_ce->m_dstBuffer, _ce->m_dstBufferSize, &_ce->m_allocParams);
+    _ce->m_dstBuffer = NULL;
+    _ce->m_dstBufferSize = 0;
     Memory_free(_ce->m_srcBuffer, _ce->m_srcBufferSize, &_ce->m_allocParams);
     _ce->m_srcBuffer = NULL;
     _ce->m_srcBufferSize = 0;
@@ -54,6 +69,13 @@ static int do_memoryAlloc(CodecEngine* _ce, size_t _srcBufferSize, size_t _dstBu
 
 static int do_memoryFree(CodecEngine* _ce)
 {
+  if (_ce->m_dstInfoBuffer != NULL)
+  {
+    Memory_free(_ce->m_dstInfoBuffer, _ce->m_dstInfoBufferSize, &_ce->m_allocParams);
+    _ce->m_dstInfoBuffer = NULL;
+    _ce->m_dstInfoBufferSize = 0;
+  }
+
   if (_ce->m_dstBuffer != NULL)
   {
     Memory_free(_ce->m_dstBuffer, _ce->m_dstBufferSize, &_ce->m_allocParams);
@@ -75,15 +97,15 @@ static XDAS_Int32 do_convertPixelFormat(CodecEngine* _ce, uint32_t _format)
 {
   switch (_format)
   {
-    case V4L2_PIX_FMT_RGB24:	return TRIK_VIDTRANSCODE_RESAMPLE_VIDEO_FORMAT_RGB888;
-    case V4L2_PIX_FMT_RGB565:	return TRIK_VIDTRANSCODE_RESAMPLE_VIDEO_FORMAT_RGB565;
-    case V4L2_PIX_FMT_RGB565X:	return TRIK_VIDTRANSCODE_RESAMPLE_VIDEO_FORMAT_RGB565X;
-    case V4L2_PIX_FMT_YUV32:	return TRIK_VIDTRANSCODE_RESAMPLE_VIDEO_FORMAT_YUV444;
-    case V4L2_PIX_FMT_YUYV:	return TRIK_VIDTRANSCODE_RESAMPLE_VIDEO_FORMAT_YUV422;
+    case V4L2_PIX_FMT_RGB24:	return TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_RGB888;
+    case V4L2_PIX_FMT_RGB565:	return TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_RGB565;
+    case V4L2_PIX_FMT_RGB565X:	return TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_RGB565X;
+    case V4L2_PIX_FMT_YUV32:	return TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV444;
+    case V4L2_PIX_FMT_YUYV:	return TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422;
     default:
       fprintf(stderr, "Unknown pixel format %c%c%c%c\n",
               _format&0xff, (_format>>8)&0xff, (_format>>16)&0xff, (_format>>24)&0xff);
-      return TRIK_VIDTRANSCODE_RESAMPLE_VIDEO_FORMAT_UNKNOWN;
+      return TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_UNKNOWN;
   }
 }
 
@@ -98,13 +120,19 @@ static int do_setupCodec(CodecEngine* _ce, const char* _codecName,
 
 #if 1
   fprintf(stderr, "VIDTRANSCODE_control(%c%c%c%c@%zux%zu[%zu] -> %c%c%c%c@%zux%zu[%zu])\n",
-          _srcFormat&0xff, (_srcFormat>>8)&0xff, (_srcFormat>>16)&0xff, (_srcFormat>>24)&0xff,
+                _srcFormat&0xff, 
+          (_srcFormat>> 8)&0xff, 
+          (_srcFormat>>16)&0xff, 
+          (_srcFormat>>24)&0xff,
           _srcWidth, _srcHeight, _srcLineLength,
-          _dstFormat&0xff, (_dstFormat>>8)&0xff, (_dstFormat>>16)&0xff, (_dstFormat>>24)&0xff,
+                _dstFormat&0xff, 
+          (_dstFormat>> 8)&0xff, 
+          (_dstFormat>>16)&0xff, 
+          (_dstFormat>>24)&0xff,
           _dstWidth, _dstHeight, _dstLineLength);
 #endif
 
-  TRIK_VIDTRANSCODE_RESAMPLE_Params ceParams;
+  TRIK_VIDTRANSCODE_CV_Params ceParams;
   memset(&ceParams, 0, sizeof(ceParams));
   ceParams.base.size = sizeof(ceParams);
   ceParams.base.numOutputStreams = 1;
@@ -125,7 +153,7 @@ static int do_setupCodec(CodecEngine* _ce, const char* _codecName,
   }
   free(codec);
 
-  TRIK_VIDTRANSCODE_RESAMPLE_DynamicParams ceDynamicParams;
+  TRIK_VIDTRANSCODE_CV_DynamicParams ceDynamicParams;
   memset(&ceDynamicParams, 0, sizeof(ceDynamicParams));
   ceDynamicParams.base.size = sizeof(ceDynamicParams);
   ceDynamicParams.base.keepInputResolutionFlag[0] = XDAS_FALSE;
@@ -161,25 +189,36 @@ static int do_releaseCodec(CodecEngine* _ce)
 
 static int do_transcodeFrame(CodecEngine* _ce,
                              const void* _srcFramePtr, size_t _srcFrameSize,
-                             void* _dstFramePtr, size_t _dstFrameSize, size_t* _dstFrameUsed)
+                             void* _dstFramePtr, size_t _dstFrameSize, size_t* _dstFrameUsed,
+                             float _detectHueFrom, float _detectHueTo,
+                             float _detectSatFrom, float _detectSatTo,
+                             float _detectValFrom, float _detectValTo,
+                             int* _targetX, int* _targetY, int* _targetMass)
 {
-  if (_ce->m_srcBuffer == NULL || _ce->m_dstBuffer == NULL)
+  if (_ce->m_srcBuffer == NULL || _ce->m_dstBuffer == NULL/* || _ce->m_dstInfoBuffer == NULL*/)
     return ENOTCONN;
   if (_srcFramePtr == NULL || _dstFramePtr == NULL)
     return EINVAL;
   if (_srcFrameSize > _ce->m_srcBufferSize || _dstFrameSize > _ce->m_dstBufferSize)
     return ENOSPC;
 
-
-  VIDTRANSCODE_InArgs tcInArgs;
+  TRIK_VIDTRANSCODE_CV_InArgs tcInArgs;
   memset(&tcInArgs, 0, sizeof(tcInArgs));
-  tcInArgs.size = sizeof(tcInArgs);
-  tcInArgs.numBytes = _srcFrameSize;
-  tcInArgs.inputID = 1; // must be non-zero, otherwise caching issues appear
+  tcInArgs.base.size = sizeof(tcInArgs);
+  tcInArgs.base.numBytes = _srcFrameSize;
+  tcInArgs.base.inputID = 1; // must be non-zero, otherwise caching issues appear
 
-  VIDTRANSCODE_OutArgs tcOutArgs;
+  tcInArgs.alg.detectHueFrom = _detectHueFrom;
+  tcInArgs.alg.detectHueTo   = _detectHueTo;
+  tcInArgs.alg.detectSatFrom = _detectSatFrom;
+  tcInArgs.alg.detectSatTo   = _detectSatTo;
+  tcInArgs.alg.detectValFrom = _detectValFrom;
+  tcInArgs.alg.detectValTo   = _detectValTo;
+  tcInArgs.alg.autoDetectHsv = autoDetectHsv;
+
+  TRIK_VIDTRANSCODE_CV_OutArgs tcOutArgs;
   memset(&tcOutArgs,    0, sizeof(tcOutArgs));
-  tcOutArgs.size = sizeof(tcOutArgs);
+  tcOutArgs.base.size = sizeof(tcOutArgs);
 
   XDM1_BufDesc tcInBufDesc;
   memset(&tcInBufDesc,  0, sizeof(tcInBufDesc));
@@ -196,42 +235,64 @@ static int do_transcodeFrame(CodecEngine* _ce,
   tcOutBufDesc.bufs[0] = _ce->m_dstBuffer;
   tcOutBufDesc.bufSizes = tcOutBufDesc_bufSizes;
   tcOutBufDesc.bufSizes[0] = _dstFrameSize;
-
+//  tcOutBufDesc.bufSizes[1] = _ce->m_dstInfoBufferSize;
+//  tcOutBufDesc.bufs[1] = _ce->m_dstInfoBuffer;
   memcpy(_ce->m_srcBuffer, _srcFramePtr, _srcFrameSize);
 
   Memory_cacheWbInv(_ce->m_srcBuffer, _ce->m_srcBufferSize); // invalidate and flush *whole* cache, not only written portion, just in case
   Memory_cacheInv(_ce->m_dstBuffer, _ce->m_dstBufferSize); // invalidate *whole* cache, not only expected portion, just in case
+/*  Memory_cacheInv(_ce->m_dstInfoBuffer, _ce->m_dstInfoBufferSize);*/
 
-  XDAS_Int32 processResult = VIDTRANSCODE_process(_ce->m_vidtranscodeHandle, &tcInBufDesc, &tcOutBufDesc, &tcInArgs, &tcOutArgs);
+  XDAS_Int32 processResult = VIDTRANSCODE_process(_ce->m_vidtranscodeHandle, &tcInBufDesc, &tcOutBufDesc, &tcInArgs.base, &tcOutArgs);
   if (processResult != IVIDTRANSCODE_EOK)
   {
     fprintf(stderr, "VIDTRANSCODE_process(%zu -> %zu) failed: %"PRIi32"/%"PRIi32"\n",
-            _srcFrameSize, _dstFrameSize, processResult, tcOutArgs.extendedError);
+            _srcFrameSize, _dstFrameSize, processResult, tcOutArgs.base.extendedError);
     return EILSEQ;
   }
 
-#warning Remove me after a while if everything is fine
-#if 0 // does not seems to be needed according to notes in CE skeletons (Wb is done by DSP side, not ARM)
+#if 0 // It seems so far that this call is not required at all
   if (XDM_ISACCESSMODE_WRITE(tcOutArgs.encodedBuf[0].accessMask))
     Memory_cacheWb(_ce->m_dstBuffer, _ce->m_dstBufferSize);
+  if (XDM_ISACCESSMODE_WRITE(tcOutArgs.encodedBuf[1].accessMask))
+    Memory_cacheWb(_ce->m_dstInfoBuffer, _ce->m_dstInfoBufferSize);
 #endif
 
-  if (tcOutArgs.encodedBuf[0].bufSize > _dstFrameSize)
-  {
-    *_dstFrameUsed = _dstFrameSize;
-    fprintf(stderr, "VIDTRANSCODE_process(%zu -> %zu) returned too large buffer %zu, truncated\n",
-            _srcFrameSize, _dstFrameSize, *_dstFrameUsed);
-  }
-  else if (tcOutArgs.encodedBuf[0].bufSize < 0)
+  if (tcOutArgs.base.encodedBuf[0].bufSize < 0)
   {
     *_dstFrameUsed = 0;
     fprintf(stderr, "VIDTRANSCODE_process(%zu -> %zu) returned negative buffer size\n",
             _srcFrameSize, _dstFrameSize);
   }
+  else if ((size_t)(tcOutArgs.base.encodedBuf[0].bufSize) > _dstFrameSize)
+  {
+    *_dstFrameUsed = _dstFrameSize;
+    fprintf(stderr, "VIDTRANSCODE_process(%zu -> %zu) returned too large buffer %zu, truncated\n",
+            _srcFrameSize, _dstFrameSize, *_dstFrameUsed);
+  }
   else
-    *_dstFrameUsed = tcOutArgs.encodedBuf[0].bufSize;
+    *_dstFrameUsed = tcOutArgs.base.encodedBuf[0].bufSize;
+
 
   memcpy(_dstFramePtr, _ce->m_dstBuffer, *_dstFrameUsed);
+
+  *_targetX    = tcOutArgs.alg.targetX;
+  *_targetY    = tcOutArgs.alg.targetY;
+  *_targetMass = (int)(tcOutArgs.alg.targetSize);
+  
+  autoDetectHue = tcOutArgs.alg.detectHue;
+  autoDetectHueTolerance = tcOutArgs.alg.detectHueTolerance;
+  autoDetectSat = tcOutArgs.alg.detectSat;
+  autoDetectSatTolerance = tcOutArgs.alg.detectSatTolerance;
+  autoDetectVal = tcOutArgs.alg.detectVal;
+  autoDetectValTolerance = tcOutArgs.alg.detectValTolerance;
+  autoZeroMass = (int)(tcOutArgs.alg.targetSize);
+  autoZeroY    = tcOutArgs.alg.targetY;
+/*
+  fprintf(stderr, "hsv: (%d, %d) (%d, %d) (%d, %d)\n", autoDetectHueFrom, autoDetectHueTo, 
+                                                       autoDetectSatFrom, autoDetectSatTo,
+                                                       autoDetectValFrom, autoDetectValTo);
+*/
 
   return 0;
 }
@@ -387,15 +448,25 @@ int codecEngineStop(CodecEngine* _ce)
 
 int codecEngineTranscodeFrame(CodecEngine* _ce,
                               const void* _srcFramePtr, size_t _srcFrameSize,
-                              void* _dstFramePtr, size_t _dstFrameSize, size_t* _dstFrameUsed)
+                              void* _dstFramePtr, size_t _dstFrameSize, size_t* _dstFrameUsed,
+                              float _detectHueFrom, float _detectHueTo,
+                              float _detectSatFrom, float _detectSatTo,
+                              float _detectValFrom, float _detectValTo,
+                              int* _targetX, int* _targetY, int* _targetMass)
 {
-  if (_ce == NULL)
+  if (_ce == NULL || _targetX == NULL || _targetMass == NULL)
     return EINVAL;
 
   if (_ce->m_handle == NULL)
     return ENOTCONN;
 
-  return do_transcodeFrame(_ce, _srcFramePtr, _srcFrameSize, _dstFramePtr, _dstFrameSize, _dstFrameUsed);
+  return do_transcodeFrame(_ce,
+                           _srcFramePtr, _srcFrameSize,
+                           _dstFramePtr, _dstFrameSize, _dstFrameUsed,
+                           _detectHueFrom, _detectHueTo,
+                           _detectSatFrom, _detectSatTo,
+                           _detectValFrom, _detectValTo,
+                           _targetX, _targetY, _targetMass);
 }
 
 int codecEngineReportLoad(CodecEngine* _ce)

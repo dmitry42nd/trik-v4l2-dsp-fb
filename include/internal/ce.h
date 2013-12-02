@@ -14,6 +14,17 @@
 extern "C" {
 #endif // __cplusplus
 
+extern bool autoDetectHsv;
+
+extern int autoDetectHue;
+extern int autoDetectHueTolerance; 
+extern int autoDetectSat;
+extern int autoDetectSatTolerance;
+extern int autoDetectVal;
+extern int autoDetectValTolerance;
+
+extern int  autoZeroMass;
+extern int  autoZeroY;
 
 typedef struct CodecEngineConfig // what user wants to set
 {
@@ -31,6 +42,9 @@ typedef struct CodecEngine
 
   size_t     m_dstBufferSize;
   void*      m_dstBuffer;
+
+  size_t     m_dstInfoBufferSize;
+  void*      m_dstInfoBuffer;
 
   VIDTRANSCODE_Handle m_vidtranscodeHandle;
 
@@ -53,7 +67,12 @@ int codecEngineStop(CodecEngine* _ce);
 
 int codecEngineTranscodeFrame(CodecEngine* _ce,
                               const void* _srcFramePtr, size_t _srcFrameSize,
-                              void* _dstFramePtr, size_t _dstFrameSize, size_t* _dstFrameUsed);
+                              void* _dstFramePtr, size_t _dstFrameSize, size_t* _dstFrameUsed,
+                              float _detectHueFrom, float _detectHueTo,
+                              float _detectSatFrom, float _detectSatTo,
+                              float _detectValFrom, float _detectValTo,
+                              int* _targetX, int* _targetY, int* _targetMass);
+
 
 int codecEngineReportLoad(CodecEngine* _ce);
 
