@@ -51,10 +51,8 @@ typedef struct RoverConfig // what user wants to set
   RoverConfigMotorMsp m_motorMsp1;
   RoverConfigMotorMsp m_motorMsp2;
   RoverConfigMotorMsp m_motorMsp3;
-  RoverConfigMotorMsp m_motorMsp4;
   RoverConfigMotor m_motor1;
   RoverConfigMotor m_motor2;
-  RoverConfigMotor m_motor3;
   RoverConfigIRRangefinder m_rangefinder;
 
   int m_zeroX;
@@ -92,10 +90,8 @@ typedef struct RoverMotor
 
 typedef struct RoverControlChasis
 {
-  RoverMotorMsp* m_motorLeft1;
-  RoverMotorMsp* m_motorLeft2;
-  RoverMotorMsp* m_motorRight1;
-  RoverMotorMsp* m_motorRight2;
+  RoverMotorMsp* m_motorLeft;
+  RoverMotorMsp* m_motorRight;
   RoverIRRangefinder* m_rangefinder;
 
   int         m_lastSpeed; // -100..100
@@ -107,8 +103,7 @@ typedef struct RoverControlChasis
 
 typedef struct RoverControlHand
 {
-  RoverMotor* m_motor1;
-  RoverMotor* m_motor2;
+  RoverMotorMsp* m_motor;
 
   int         m_lastSpeed; // -100..100
   int         m_zeroY;
@@ -117,9 +112,9 @@ typedef struct RoverControlHand
 typedef struct RoverControlArm
 {
   RoverMotor* m_motor;
-  int         m_zeroX;
-  int         m_zeroY;
-  int         m_zeroMass;
+  int            m_zeroX;
+  int            m_zeroY;
+  int            m_zeroMass;
 } RoverControlArm;
 
 typedef struct RoverOutput
@@ -129,10 +124,10 @@ typedef struct RoverOutput
   RoverMotorMsp m_motorMsp1;
   RoverMotorMsp m_motorMsp2;
   RoverMotorMsp m_motorMsp3;
-  RoverMotorMsp m_motorMsp4;
+//  RoverMotorMsp m_motorMsp4;
   RoverMotor m_motor1;
   RoverMotor m_motor2;
-  RoverMotor m_motor3;
+//  RoverMotor m_motor3;
   RoverIRRangefinder m_rangefinder;
   RoverControlChasis m_ctrlChasis;
   RoverControlHand   m_ctrlHand;

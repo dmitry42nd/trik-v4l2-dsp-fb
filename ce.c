@@ -288,6 +288,8 @@ static int do_transcodeFrame(CodecEngine* _ce,
   autoDetectValTolerance = tcOutArgs.alg.detectValTolerance;
   autoZeroMass = (int)(tcOutArgs.alg.targetSize);
   autoZeroY    = tcOutArgs.alg.targetY;
+  autoZeroX    = tcOutArgs.alg.targetX;
+
 /*
   fprintf(stderr, "hsv: (%d, %d) (%d, %d) (%d, %d)\n", autoDetectHueFrom, autoDetectHueTo, 
                                                        autoDetectSatFrom, autoDetectSatTo,

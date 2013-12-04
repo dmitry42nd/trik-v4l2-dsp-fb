@@ -49,7 +49,9 @@ int autoDetectSatTolerance = 0;
 int autoDetectVal = 0;
 int autoDetectValTolerance = 0;
 int autoZeroMass = 0;    
-int autoZeroY = 0;    
+int autoZeroY = 0;
+int autoZeroX = 0;
+
 
 //buttons stuff
 struct pollfd fds;
@@ -87,12 +89,10 @@ static bool s_cfgVerbose = false;
 static CodecEngineConfig s_cfgCodecEngine = { "dsp_server.xe674", "vidtranscode_cv" };
 static V4L2Config s_cfgV4L2Input = { "/dev/video0", 320, 240, V4L2_PIX_FMT_YUYV };
 static FBConfig s_cfgFBOutput = { "/dev/fb0" };
-static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x14, 0x12, 0x64 }, //msp left1
-                                        { 2, 0x48, 0x17, 0x12, 0x64 }, //msp left2  //0x16 for scorpio
-                                        { 2, 0x48, 0x15, 0x12, 0x64 }, //msp right1
-                                        { 2, 0x48, 0x16, 0x12, 0x64 }, //msp right2 //0x17 for scorpio
-                                        { "/sys/class/pwm/ecap.0/duty_ns",     2300000, 1600000, 0, 1400000, 700000  }, //up-down m1
-                                        { "/sys/class/pwm/ecap.1/duty_ns",     700000,  1400000, 0, 1600000, 2300000 }, //up-down m2
+static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x14, 0x12, 0x64 }, //msp left
+                                        { 2, 0x48, 0x16, 0x12, 0x64 }, //msp right
+                                        { 2, 0x48, 0x17, 0x12, 0x64 }, //msp arm up-down
+                                        { "/sys/class/pwm/ecap.0/duty_ns",     2300000, 1600000, 0, 1400000, 700000  }, //rotate
                                         { "/sys/class/pwm/ehrpwm.1:1/duty_ns", 700000,  1400000, 0, 1600000, 2300000 }, //squeeze
                                         { 2, 0x48, 0x20, 0xf0, 0x200}, //IR rangefinder
                                         0, 50, 30};
@@ -128,12 +128,14 @@ static bool parse_args(int _argc, char* const _argv[])
     { "rover-m2-neutral",	1,	NULL,	0   },
     { "rover-m2-forward-zero",	1,	NULL,	0   },
     { "rover-m2-forward-full",	1,	NULL,	0   },
+/*
     { "rover-m3-path",		1,	NULL,	0   }, // 19
     { "rover-m3-back-full",	1,	NULL,	0   },
     { "rover-m3-back-zero",	1,	NULL,	0   },
     { "rover-m3-neutral",	1,	NULL,	0   },
     { "rover-m3-forward-zero",	1,	NULL,	0   },
     { "rover-m3-forward-full",	1,	NULL,	0   },
+*/
     { "rover-msp-m1-i2c-bus",	1,	NULL,	0   }, // 25
     { "rover-msp-m1-i2c-dev",	1,	NULL,	0   },
     { "rover-msp-m1-i2c-cmd",	1,	NULL,	0   },
@@ -149,11 +151,13 @@ static bool parse_args(int _argc, char* const _argv[])
     { "rover-msp-m3-i2c-cmd",	1,	NULL,	0   },
     { "rover-msp-m3-min",	1,	NULL,	0   },
     { "rover-msp-m3-max",	1,	NULL,	0   },
+/*
     { "rover-msp-m4-i2c-bus",	1,	NULL,	0   }, // 40
     { "rover-msp-m4-i2c-dev",	1,	NULL,	0   },
     { "rover-msp-m4-i2c-cmd",	1,	NULL,	0   },
     { "rover-msp-m4-min",	1,	NULL,	0   },
     { "rover-msp-m4-max",	1,	NULL,	0   },
+*/
     { "rover-zero-x",		1,	NULL,	0   }, // 45
     { "rover-zero-y",		1,	NULL,	0   },
     { "rover-zero-mass",	1,	NULL,	0   },
@@ -227,14 +231,14 @@ static bool parse_args(int _argc, char* const _argv[])
           case 16: s_cfgRoverOutput.m_motor2.m_powerNeutral = atoi(optarg);	break;
           case 17: s_cfgRoverOutput.m_motor2.m_powerForwardZero = atoi(optarg);	break;
           case 18: s_cfgRoverOutput.m_motor2.m_powerForwardFull = atoi(optarg);	break;
-
+/*
           case 19: s_cfgRoverOutput.m_motor3.m_path = optarg;			break;
           case 20: s_cfgRoverOutput.m_motor3.m_powerBackFull = atoi(optarg);	break;
           case 21: s_cfgRoverOutput.m_motor3.m_powerBackZero = atoi(optarg);	break;
           case 22: s_cfgRoverOutput.m_motor3.m_powerNeutral = atoi(optarg);	break;
           case 23: s_cfgRoverOutput.m_motor3.m_powerForwardZero = atoi(optarg);	break;
           case 24: s_cfgRoverOutput.m_motor3.m_powerForwardFull = atoi(optarg);	break;
-
+*/
           case 25: s_cfgRoverOutput.m_motorMsp1.m_mspI2CBusId    = atoi(optarg);	break;
           case 26: s_cfgRoverOutput.m_motorMsp1.m_mspI2CDeviceId = atoi(optarg);	break;
           case 27: s_cfgRoverOutput.m_motorMsp1.m_mspI2CMotorCmd = atoi(optarg);	break;
@@ -252,13 +256,13 @@ static bool parse_args(int _argc, char* const _argv[])
           case 37: s_cfgRoverOutput.m_motorMsp3.m_mspI2CMotorCmd = atoi(optarg);	break;
           case 38: s_cfgRoverOutput.m_motorMsp3.m_powerMin       = atoi(optarg);	break;
           case 39: s_cfgRoverOutput.m_motorMsp3.m_powerMax       = atoi(optarg);	break;
-
+/*
           case 40: s_cfgRoverOutput.m_motorMsp4.m_mspI2CBusId    = atoi(optarg);	break;
           case 41: s_cfgRoverOutput.m_motorMsp4.m_mspI2CDeviceId = atoi(optarg);	break;
           case 42: s_cfgRoverOutput.m_motorMsp4.m_mspI2CMotorCmd = atoi(optarg);	break;
           case 43: s_cfgRoverOutput.m_motorMsp4.m_powerMin       = atoi(optarg);	break;
           case 44: s_cfgRoverOutput.m_motorMsp4.m_powerMax       = atoi(optarg);	break;
-
+*/
           case 45: s_cfgRoverOutput.m_zeroX    = atoi(optarg);	break;
           case 46: s_cfgRoverOutput.m_zeroY    = atoi(optarg);	break;
           case 47: s_cfgRoverOutput.m_zeroMass = atoi(optarg);	break;
@@ -443,10 +447,8 @@ int main(int _argc, char* const _argv[])
   rover.m_motorMsp1.m_i2cBusFd = -1;
   rover.m_motorMsp2.m_i2cBusFd = -1;
   rover.m_motorMsp3.m_i2cBusFd = -1;
-  rover.m_motorMsp4.m_i2cBusFd = -1;
   rover.m_motor1.m_fd = -1;
   rover.m_motor2.m_fd = -1;
-  rover.m_motor3.m_fd = -1;
   if ((res = roverOutputOpen(&rover, &s_cfgRoverOutput)) != 0)
   {
     fprintf(stderr, "roverOutputOpen() failed: %d\n", res);
@@ -827,15 +829,21 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
       {
         RoverControlChasis* chasis = &_rover->m_ctrlChasis;
         RoverControlArm*       arm = &_rover->m_ctrlArm;
-
         RoverControlHand*     hand = &_rover->m_ctrlHand;
+
         chasis->m_zeroMass = autoZeroMass;
         chasis->m_zeroY = autoZeroY;
+        chasis->m_zeroX = autoZeroX;
+
         arm->m_zeroMass = autoZeroMass;
         arm->m_zeroY = autoZeroY;
+        arm->m_zeroX = autoZeroX;
+
         hand->m_zeroY = autoZeroY;
+
         fprintf(stderr, "Current zero mass: %d\n", chasis->m_zeroMass);
         fprintf(stderr, "Current zero Y   : %d\n", chasis->m_zeroY);
+        fprintf(stderr, "Current zero X   : %d\n", chasis->m_zeroX);
       }
       if (mev[0].type == 1 && mev[0].code == 64 && mev[0].value == 1) 
         autoDetectHsv = true;

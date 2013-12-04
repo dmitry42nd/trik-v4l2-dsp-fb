@@ -25,6 +25,7 @@ extern int autoDetectValTolerance;
 
 extern int  autoZeroMass;
 extern int  autoZeroY;
+extern int  autoZeroX;
 
 typedef struct CodecEngineConfig // what user wants to set
 {

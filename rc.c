@@ -41,6 +41,7 @@ static int do_openServerFd(RCInput* _rc, int _port)
   addr.sin_port = htons(_port);
   addr.sin_addr.s_addr = INADDR_ANY;
 
+
   if (bind(_rc->m_serverFd, (struct sockaddr*)&addr, sizeof(addr)) != 0)
   {
     res = errno;
@@ -189,7 +190,7 @@ static int do_readStdio(RCInput* _rc)
     case 'm': _rc->m_manualMode = !_rc->m_manualMode; break;
   };
 
-  fprintf(stderr, "Target detection: hue %f [%f], sat %f [%f], val %f [%f]\n",
+  fprintf(stderr, "Target detection: hue %d [%d], sat %d [%d], val %d [%d]\n",
           _rc->m_autoTargetDetectHue, _rc->m_autoTargetDetectHueTolerance,
           _rc->m_autoTargetDetectSat, _rc->m_autoTargetDetectSatTolerance,
           _rc->m_autoTargetDetectVal, _rc->m_autoTargetDetectValTolerance);
