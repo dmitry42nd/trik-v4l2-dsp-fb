@@ -15,13 +15,12 @@ extern "C" {
 #endif // __cplusplus
 
 extern bool autoDetectHsv;
-extern int	autoDetectHueFrom; // [0..256]
-extern int  autoDetectHueTo;   // [0..256]
-extern int  autoDetectSatFrom; // [0..256]
-extern int  autoDetectSatTo;   // [0..256]
-extern int  autoDetectValFrom; // [0..256]
-extern int  autoDetectValTo;   // [0..256]
-extern int  autoZeroMass;
+extern int autoDetectHue;
+extern int autoDetectHueTolerance; 
+extern int autoDetectSat;
+extern int autoDetectSatTolerance;
+extern int autoDetectVal;
+extern int autoDetectValTolerance;
 
 typedef struct CodecEngineConfig // what user wants to set
 {

@@ -279,13 +279,13 @@ static int do_transcodeFrame(CodecEngine* _ce,
   *_targetX    = tcOutArgs.alg.targetX;
 //  _targetY    = tcOutArgs.alg.targetY;
   *_targetMass = (int)(tcOutArgs.alg.targetSize);
-  autoDetectHueFrom = tcOutArgs.alg.detectHueFrom*1.4f; // [0..256]
-  autoDetectHueTo = tcOutArgs.alg.detectHueTo*1.4f;   // [0..256]
-  autoDetectSatFrom = tcOutArgs.alg.detectSatFrom*0.39f; // [0..256]
-  autoDetectSatTo = tcOutArgs.alg.detectSatTo*0.39f;   // [0..256]
-  autoDetectValFrom = tcOutArgs.alg.detectValFrom*0.39f; // [0..256]
-  autoDetectValTo = tcOutArgs.alg.detectValTo*0.39f;   // [0..256]
-  autoZeroMass = (int)(tcOutArgs.alg.targetSize);
+  autoDetectHue = tcOutArgs.alg.detectHue;
+  autoDetectHueTolerance = tcOutArgs.alg.detectHueTolerance;
+  autoDetectSat = tcOutArgs.alg.detectSat;
+  autoDetectSatTolerance = tcOutArgs.alg.detectSatTolerance;
+  autoDetectVal = tcOutArgs.alg.detectVal;
+  autoDetectValTolerance = tcOutArgs.alg.detectValTolerance;
+
 /*
   fprintf(stderr, "hsv: (%d, %d) (%d, %d) (%d, %d)\n", autoDetectHueFrom, autoDetectHueTo, 
                                                        autoDetectSatFrom, autoDetectSatTo,

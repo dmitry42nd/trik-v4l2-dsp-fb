@@ -41,13 +41,12 @@ int SPEED = 70;
 
 //auto hsv range detector stuff
 bool autoDetectHsv = false;
-int	autoDetectHueFrom = 0;
-int autoDetectHueTo = 0; 
-int autoDetectSatFrom = 0;
-int autoDetectSatTo = 0;  
-int autoDetectValFrom = 0;
-int autoDetectValTo = 0;
-int autoZeroMass = 0;    
+int	autoDetectHue = 0;
+int autoDetectHueTolerance = 0; 
+int autoDetectSat = 0;
+int autoDetectSatTolerance = 0;  
+int autoDetectVal = 0;
+int autoDetectValTolerance = 0;
 
 //buttons stuff
 struct pollfd fds;
@@ -666,24 +665,15 @@ static int mainLoopV4L2Frame(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _f
 
   if(autoDetectHsv)
   {
-    if (autoDetectHueFrom <= autoDetectHueTo) 
-    {
-      _rc->m_autoTargetDetectHue = (autoDetectHueTo + autoDetectHueFrom) / 2;
-      _rc->m_autoTargetDetectHueTolerance = (autoDetectHueTo - autoDetectHueFrom) / 2;
-    }
-    else
-    {
-      float hue = (autoDetectHueTo - (360.0f - autoDetectHueFrom)) / 2;
-      float hueTolerance = (autoDetectHueTo + (360.0f - autoDetectHueFrom)) / 2;
-      _rc->m_autoTargetDetectHue = hue >= 0 ? hue : (hue + 360);
-      _rc->m_autoTargetDetectHueTolerance = hueTolerance;
-    }
+    _rc->m_autoTargetDetectHue = autoDetectHue;
+    _rc->m_autoTargetDetectHueTolerance = autoDetectHueTolerance;
+    _rc->m_autoTargetDetectSat = autoDetectSat;
+    _rc->m_autoTargetDetectSatTolerance = autoDetectSatTolerance;
+    _rc->m_autoTargetDetectVal = autoDetectVal;
+    _rc->m_autoTargetDetectValTolerance = autoDetectValTolerance;
 
-    _rc->m_autoTargetDetectSat = (autoDetectSatTo + autoDetectSatFrom) / 2;
-    _rc->m_autoTargetDetectSatTolerance = (autoDetectSatTo - autoDetectSatFrom) / 2;
-    _rc->m_autoTargetDetectVal = (autoDetectValTo + autoDetectValFrom) / 2;
-    _rc->m_autoTargetDetectValTolerance = (autoDetectValTo - autoDetectValFrom) / 2;
-
+    fprintf(stderr, "hsv   : %d %d %d\n", autoDetectHue, autoDetectSat, autoDetectVal);
+    fprintf(stderr, "hsvTol: %d %d %d\n", autoDetectHueTolerance, autoDetectSatTolerance, autoDetectValTolerance);
   }
   
   //fprintf log
@@ -829,14 +819,6 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
     {
       if (mev[0].type == 1 && mev[0].code == 62 && mev[0].value == 1) 
         roverSetPause(_rover);
-/*
-      if (mev[0].type == 1 && mev[0].code == 62 && mev[0].value == 1) 
-      {
-        RoverControlChasis* chasis = &_rover->m_ctrlChasis;
-        chasis->m_zeroMass = autoZeroMass;
-        fprintf(stderr, "Current zero mass: %d\n", chasis->m_zeroMass);
-      }
-*/
       if (mev[0].type == 1 && mev[0].code == 64 && mev[0].value == 1) 
         autoDetectHsv = true;
     }
