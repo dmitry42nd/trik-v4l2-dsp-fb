@@ -38,6 +38,7 @@ typedef struct RCInput
   int                      m_manualCtrlChasisFB;
   int                      m_manualCtrlHand;
   int                      m_manualCtrlArm;
+  int                      m_manualCtrlArmRotate;
 
   int                      m_autoTargetDetectHue;
   int                      m_autoTargetDetectHueTolerance;
@@ -61,7 +62,7 @@ int rcInputAcceptConnection(RCInput* _rc);
 int rcInputReadConnection(RCInput* _rc);
 
 bool rcInputIsManualMode(RCInput* _rc);
-int rcInputGetManualCommand(RCInput* _rc, int* _ctrlChasisLR, int* _ctrlChasisFB, int* _ctrlHand, int* _ctrlArm);
+int rcInputGetManualCommand(RCInput* _rc, int* _ctrlChasisLR, int* _ctrlChasisFB, int* _ctrlHand, int* _ctrlArm, int* _ctrlArmRotate);
 int rcInputGetAutoTargetDetect(RCInput* _rc,
                                int* _detectHueFrom, int* _detectHueTo,
                                int* _detectSatFrom, int* _detectSatTo,

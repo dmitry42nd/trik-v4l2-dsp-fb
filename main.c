@@ -728,13 +728,14 @@ static int mainLoopRCManualModeUpdate(CodecEngine* _ce, V4L2Input* _v4l2Src, FBO
     int ctrlChasisFB;
     int ctrlHand;
     int ctrlArm;
+    int ctrlArmRotate;
 
-    if ((res = rcInputGetManualCommand(_rc, &ctrlChasisLR, &ctrlChasisFB, &ctrlHand, &ctrlArm)) != 0)
+    if ((res = rcInputGetManualCommand(_rc, &ctrlChasisLR, &ctrlChasisFB, &ctrlHand, &ctrlArm, &ctrlArmRotate)) != 0)
     {
       fprintf(stderr, "rcInputGetManualCommand() failed: %d\n", res);
       return res;
     }
-    if ((res = roverOutputControlManual(_rover, ctrlChasisLR, ctrlChasisFB, ctrlHand, ctrlArm)) != 0)
+    if ((res = roverOutputControlManual(_rover, ctrlChasisLR, ctrlChasisFB, ctrlHand, ctrlArm, ctrlArmRotate)) != 0)
     {
       fprintf(stderr, "roverOutputControlManual() failed: %d\n", res);
       return res;

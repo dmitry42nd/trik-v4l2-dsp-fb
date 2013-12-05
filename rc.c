@@ -230,6 +230,7 @@ static int do_acceptConnection(RCInput* _rc)
   _rc->m_manualCtrlChasisFB = 0;
   _rc->m_manualCtrlHand     = 0;
   _rc->m_manualCtrlArm      = 0;
+  _rc->m_manualCtrlArmRotate      = 0;
 
   return 0;
 }
@@ -252,6 +253,7 @@ static int do_dropConnection(RCInput* _rc)
   _rc->m_manualCtrlChasisFB = 0;
   _rc->m_manualCtrlHand     = 0;
   _rc->m_manualCtrlArm      = 0;
+  _rc->m_manualCtrlArmRotate      = 0;
 
   return 0;
 }
@@ -347,11 +349,20 @@ static int do_readConnection(RCInput* _rc)
           _rc->m_manualMode = true;
         else if (btn == 2)
           _rc->m_manualMode = false;
-        else 
-          fprintf(stderr, "Failed to parse btn arguments '%s' too\n", parseAt);
       }
       else
         fprintf(stderr, "Failed to parse btn arguments '%s'\n", parseAt);
+    }
+    else if (strncmp(parseAt, "wheel ", strlen("wheel ")) == 0)
+    {
+      parseAt += strlen("wheel ");
+        int rotate;
+        if (sscanf(parseAt, "%d", &rotate) == 1)
+        {
+          _rc->m_manualCtrlArmRotate = rotate;
+        }
+        else
+          fprintf(stderr, "Failed to parse wheel arguments '%s'\n", parseAt);
     }
     else
       fprintf(stderr, "Unable to parse remote control command '%s'\n", parseAt);
@@ -450,6 +461,7 @@ int rcInputStart(RCInput* _rc)
   _rc->m_manualCtrlChasisFB = 0;
   _rc->m_manualCtrlHand = 0;
   _rc->m_manualCtrlArm = 0;
+  _rc->m_manualCtrlArmRotate = 0;
 
   return 0;
 }
@@ -470,6 +482,7 @@ int rcInputStop(RCInput* _rc)
   _rc->m_manualCtrlChasisFB = 0;
   _rc->m_manualCtrlHand = 0;
   _rc->m_manualCtrlArm = 0;
+  _rc->m_manualCtrlArmRotate = 0;
 
   return 0;
 }
@@ -522,7 +535,7 @@ bool rcInputIsManualMode(RCInput* _rc)
   return _rc->m_manualMode;
 }
 
-int rcInputGetManualCommand(RCInput* _rc, int* _ctrlChasisLR, int* _ctrlChasisFB, int* _ctrlHand, int* _ctrlArm)
+int rcInputGetManualCommand(RCInput* _rc, int* _ctrlChasisLR, int* _ctrlChasisFB, int* _ctrlHand, int* _ctrlArm, int* _ctrlArmRotate)
 {
   if (_rc == NULL)
     return EINVAL;
@@ -538,6 +551,8 @@ int rcInputGetManualCommand(RCInput* _rc, int* _ctrlChasisLR, int* _ctrlChasisFB
     *_ctrlHand = _rc->m_manualCtrlHand;
   if (_ctrlArm)
     *_ctrlArm = _rc->m_manualCtrlArm;
+  if (_ctrlArmRotate)
+    *_ctrlArmRotate = _rc->m_manualCtrlArmRotate;
 
   return 0;
 }

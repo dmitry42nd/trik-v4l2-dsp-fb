@@ -297,8 +297,8 @@ static int do_roverCtrlArmSetup(RoverOutput* _rover, const RoverConfig* _config)
 {
   RoverControlArm* arm = &_rover->m_ctrlArm;
 
-  arm->m_motor = &_rover->m_motor2;
-  arm->m_motorRotate = &_rover->m_motor1;
+  arm->m_motor = &_rover->m_motor1;
+  arm->m_motorRotate = &_rover->m_motor2;
   arm->m_zeroX = _config->m_zeroX;
   arm->m_zeroY = _config->m_zeroY;
   arm->m_zeroMass = _config->m_zeroMass;
@@ -354,12 +354,12 @@ static int do_roverCtrlHandManual(RoverOutput* _rover, int _ctrlHand)
   return 0;
 }
 
-static int do_roverCtrlArmManual(RoverOutput* _rover, int _ctrlArm)
+static int do_roverCtrlArmManual(RoverOutput* _rover, int _ctrlArm, int _ctrlArmRotate)
 {
   RoverControlArm* arm = &_rover->m_ctrlArm;
 
-//  do_roverMotorSetPower(_rover, arm->m_motor, _ctrlArm);
-  do_roverMotorSetPower(_rover, arm->m_motorRotate, _ctrlArm);
+  do_roverMotorSetPower(_rover, arm->m_motor, _ctrlArm);
+  do_roverMotorSetPower(_rover, arm->m_motorRotate, _ctrlArmRotate);
 
   return 0;
 }
@@ -783,7 +783,7 @@ int roverOutputStop(RoverOutput* _rover)
   return 0;
 }
 
-int roverOutputControlManual(RoverOutput* _rover, int _ctrlChasisLR, int _ctrlChasisFB, int _ctrlHand, int _ctrlArm)
+int roverOutputControlManual(RoverOutput* _rover, int _ctrlChasisLR, int _ctrlChasisFB, int _ctrlHand, int _ctrlArm, int _ctrlArmRotate)
 {
   if (_rover == NULL)
     return EINVAL;
@@ -799,7 +799,7 @@ int roverOutputControlManual(RoverOutput* _rover, int _ctrlChasisLR, int _ctrlCh
 
   do_roverCtrlChasisManual(_rover, _ctrlChasisLR, _ctrlChasisFB);
   do_roverCtrlHandManual(_rover, _ctrlHand);
-  do_roverCtrlArmManual(_rover, _ctrlArm);
+  do_roverCtrlArmManual(_rover, _ctrlArm, _ctrlArmRotate);
 
   return 0;
 }
@@ -829,7 +829,7 @@ int roverOutputControlAuto(RoverOutput* _rover, int _targetX, int _targetY, int 
     case StateManual:
       do_roverCtrlChasisManual(_rover, 0, 0);
       do_roverCtrlHandManual(_rover, 0);
-      do_roverCtrlArmManual(_rover, 0);
+      do_roverCtrlArmManual(_rover, 0, 0);
       fprintf(stderr, "*** LEFT MANUAL MODE, PREPARING ***\n");
       _rover->m_state = StatePreparing;
       _rover->m_stateEntryTime.tv_sec = 0;
