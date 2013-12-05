@@ -298,6 +298,7 @@ static int do_roverCtrlArmSetup(RoverOutput* _rover, const RoverConfig* _config)
   RoverControlArm* arm = &_rover->m_ctrlArm;
 
   arm->m_motor = &_rover->m_motor2;
+  arm->m_motorRotate = &_rover->m_motor1;
   arm->m_zeroX = _config->m_zeroX;
   arm->m_zeroY = _config->m_zeroY;
   arm->m_zeroMass = _config->m_zeroMass;
@@ -357,7 +358,8 @@ static int do_roverCtrlArmManual(RoverOutput* _rover, int _ctrlArm)
 {
   RoverControlArm* arm = &_rover->m_ctrlArm;
 
-  do_roverMotorSetPower(_rover, arm->m_motor, _ctrlArm);
+//  do_roverMotorSetPower(_rover, arm->m_motor, _ctrlArm);
+  do_roverMotorSetPower(_rover, arm->m_motorRotate, _ctrlArm);
 
   return 0;
 }
@@ -387,6 +389,7 @@ static int do_roverCtrlArmPreparing(RoverOutput* _rover)
   RoverControlArm* arm = &_rover->m_ctrlArm;
 
   do_roverMotorSetPower(_rover, arm->m_motor, -100);
+  do_roverMotorSetPower(_rover, arm->m_motorRotate, 0);
 
   return 0;
 }
@@ -414,6 +417,7 @@ static int do_roverCtrlArmPaused(RoverOutput* _rover)
   RoverControlArm* arm = &_rover->m_ctrlArm;
 
   do_roverMotorSetPower(_rover, arm->m_motor, 0);
+  do_roverMotorSetPower(_rover, arm->m_motorRotate, 0);
 
   return 0;
 }
@@ -442,6 +446,7 @@ static int do_roverCtrlArmSearching(RoverOutput* _rover)
   RoverControlArm* arm = &_rover->m_ctrlArm;
 
   do_roverMotorSetPower(_rover, arm->m_motor, 0);
+  do_roverMotorSetPower(_rover, arm->m_motorRotate, 0);
 
   return 0;
 }
@@ -580,6 +585,7 @@ static int do_roverCtrlArmTracking(RoverOutput* _rover, int _targetX, int _targe
   RoverControlArm* arm = &_rover->m_ctrlArm;
 
   do_roverMotorSetPower(_rover, arm->m_motor, 0);
+  do_roverMotorSetPower(_rover, arm->m_motorRotate, 0);
 
   int diffX = powerProportional(_targetX, -100, arm->m_zeroX, 100);
   int diffY = powerProportional(_targetY, -100, arm->m_zeroY, 100);
@@ -624,6 +630,7 @@ static int do_roverCtrlArmSqueezing(RoverOutput* _rover)
 
 #warning Check lock is stable?
   do_roverMotorSetPower(_rover, arm->m_motor, 100);
+  do_roverMotorSetPower(_rover, arm->m_motorRotate, 0);
 
   return 0;
 }
@@ -671,6 +678,8 @@ static int do_roverCtrlHandReleasing(RoverOutput* _rover, int _ms)
 static int do_roverCtrlArmReleasing(RoverOutput* _rover, int _ms)
 {
   RoverControlArm* arm = &_rover->m_ctrlArm;
+
+  do_roverMotorSetPower(_rover, arm->m_motorRotate, 0);
 
   if (_ms < 3000)
     do_roverMotorSetPower(_rover, arm->m_motor, 0);

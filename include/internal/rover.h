@@ -112,6 +112,7 @@ typedef struct RoverControlHand
 typedef struct RoverControlArm
 {
   RoverMotor* m_motor;
+  RoverMotor* m_motorRotate;
   int            m_zeroX;
   int            m_zeroY;
   int            m_zeroMass;

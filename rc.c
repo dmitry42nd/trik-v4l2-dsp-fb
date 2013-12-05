@@ -347,6 +347,8 @@ static int do_readConnection(RCInput* _rc)
           _rc->m_manualMode = true;
         else if (btn == 2)
           _rc->m_manualMode = false;
+        else 
+          fprintf(stderr, "Failed to parse btn arguments '%s' too\n", parseAt);
       }
       else
         fprintf(stderr, "Failed to parse btn arguments '%s'\n", parseAt);
