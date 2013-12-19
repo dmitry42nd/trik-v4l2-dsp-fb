@@ -359,14 +359,14 @@ static int do_roverMotorMspSetPower(RoverOutput* _rover,
     pwm = 0x0;
   else if (_power < 0) // back
   {
-    if (_power < -100)
+    if (_power < -99)
       pwm = 0x9C; //-100
     else
       pwm = 0xFF + _power; 
   }
   else // forward
   {
-    if (_power > 100)
+    if (_power > 99)
       pwm = _motor->m_powerMax;
     else
       pwm = _power;
