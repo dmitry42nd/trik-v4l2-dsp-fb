@@ -629,8 +629,8 @@ static int do_roverCtrlChasisSearching(RoverOutput* _rover)
 
   fprintf(stderr, "Chasis l : %d x r : %d\n", speedL, speedR);
   do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, speedL); //minus is because motors are always right!
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, speedL);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, -speedR);
+  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, speedL-15);  //for sake of LED-tape!
+  do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, speedR-15); //for sake of LED-tape!
   do_roverMotorMspSetPower(_rover, chasis->m_motorRight2, -speedR);
 
 #endif
@@ -702,8 +702,8 @@ static int do_roverCtrlChasisTracking(RoverOutput* _rover, int _targetX, int _ta
 //  fprintf(stderr, "Target x: %d\n", _targetX);
   fprintf(stderr, "Chasis l : %d x r : %d\n", speedL, speedR);
   do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, speedL); //minus is because motors are always right!
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, speedL);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, -speedR);
+  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, speedL*(pow((float)speedL/100.0f,2)));  //for sake of LED-tape!
+  do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, speedR*(pow((float)speedR/100.0f,2))); //for sake of LED-tape!
   do_roverMotorMspSetPower(_rover, chasis->m_motorRight2, -speedR);
 
   return 0;
