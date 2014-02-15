@@ -67,7 +67,7 @@ int codecEngineTranscodeFrame(CodecEngine* _ce,
                               float _detectHueFrom, float _detectHueTo,
                               float _detectSatFrom, float _detectSatTo,
                               float _detectValFrom, float _detectValTo,
-                              int* _targetX, int* _targetMass);
+                              int* _targetX, int* _targetY, int* _targetMass);
 
 
 int codecEngineReportLoad(CodecEngine* _ce);

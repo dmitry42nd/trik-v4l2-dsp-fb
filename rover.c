@@ -15,14 +15,19 @@
 #include <stdint.h>
 #include <linux/input.h>
 #include <fcntl.h>
+//#include <math.h>
 
 #include "internal/rover.h"
 
 
-static int min_target_mass = 1;
-static enum State m_prepaused_state;
+static int min_target_mass = 2;
 static int search_yaw[2];
+static double integral = 0; 
 
+static int c_sL = 0;
+static int c_sR = 0;
+static float m_xold = 0;
+static bool searching = false;
 /*
 static float pStep = 0.002;
 static float iStep = 0.00002;
@@ -281,7 +286,7 @@ static int do_roverOpen(RoverOutput* _rover,
     do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp4);
     do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp3);
     do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp2);
-    do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp1);
+    do_roverCloseRangefinder(_rover, &_rover->m_motorMsp1);
     return res;
   }
 
@@ -353,23 +358,23 @@ static int do_roverMotorMspSetPower(RoverOutput* _rover,
   if (_rover == NULL || _motor == NULL)
     return EINVAL;
 
-  int pwm = 0x0;
+  int pwm;
 
   if (_power == 0) // neutral
-    pwm = 0x0;
+    pwm = 0;
   else if (_power < 0) // back
   {
-    if (_power < -99)
-      pwm = 0x9C; //-100
+    if (_power < -100)
+      pwm = 0x9d;
     else
-      pwm = 0xFF + _power; 
+      pwm = 0xff + ((0x9d-0xff)*(-_power))/100;
   }
   else // forward
   {
-    if (_power > 99)
+    if (_power > 100)
       pwm = _motor->m_powerMax;
     else
-      pwm = _power;
+      pwm = _motor->m_powerMin + ((_motor->m_powerMax-_motor->m_powerMin)*_power)/100;
   }
 
   int devId = _motor->m_mspI2CDeviceId;
@@ -383,17 +388,18 @@ static int do_roverMotorMspSetPower(RoverOutput* _rover,
   unsigned char cmd[2];
   cmd[0] = (_motor->m_mspI2CMotorCmd)&0xff;
   cmd[1] =  inverseMotorCoeff*pwm&0xff;
-//  fprintf(stderr,"i2cbusFd: %x : %x, %x || %x \n",_motor->m_i2cBusFd, cmd[0], cmd[1], _motor->m_mspI2CMotorCmd);
+
   if ((res = write(_motor->m_i2cBusFd, &cmd, sizeof(cmd))) != sizeof(cmd))
   {
     if (res >= 0)
       res = E2BIG;
     else
       res = errno;
-      fprintf(stderr, "write(%d) failed: %d\n", _motor->m_i2cBusFd, res);
+    fprintf(stderr, "write(%d) failed: %d\n", _motor->m_i2cBusFd, res);
     return res;
   }
 
+//  fprintf(stderr, "%d: %d\n", _motor->m_mspI2CMotorCmd, pwm&0xff);
   return 0;
 }
 
@@ -469,7 +475,7 @@ static int do_roverCtrlChasisStart(RoverOutput* _rover)
 
   chasis->m_lastSpeed = 0;
   chasis->m_lastYaw = 0;
-
+  
   return 0;
 }
 
@@ -531,7 +537,7 @@ static int do_roverCtrlChasisPreparing(RoverOutput* _rover)
   do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 0);
   do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, 0);
   do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, 0);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight2, 0);
+  do_roverMotorMspSetPower(_rover, chasis->m_motorRight2, 100);
 
   return 0;
 }
@@ -574,7 +580,9 @@ static int powerProportional(int _val, int _min, int _zero, int _max)
 static int do_roverCtrlChasisPaused(RoverOutput* _rover){
 #if 1
   RoverControlChasis* chasis = &_rover->m_ctrlChasis;
-
+  integral = 0;
+  m_xold = 0;
+  searching = false;
   do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 0);
   do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, 0);
   do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, 0);
@@ -584,11 +592,21 @@ static int do_roverCtrlChasisPaused(RoverOutput* _rover){
 
 }
 
+static int m_max(int a, int b)
+{
+  return a >= b ? a : b;
+}
+
+static int m_min(int a, int b)
+{
+  return a <= b ? a : b;
+}
+
 static int do_roverCtrlChasisSearching(RoverOutput* _rover)
 {
   RoverControlChasis* chasis = &_rover->m_ctrlChasis;
 
-  #if 1
+  #if 0
     int dist = do_roverRangefinderGetValue(_rover, chasis->m_rangefinder);
 
     if (irrEnable && dist > 0x1b0 && dist < 0x02e0)
@@ -603,108 +621,135 @@ static int do_roverCtrlChasisSearching(RoverOutput* _rover)
     }
     
   #endif
+
 #if 1
-  float x0 = powerProportional(search_yaw[0], -100, chasis->m_zeroX, 100);
-  float x1 = powerProportional(search_yaw[1], -100, chasis->m_zeroX, 100);
+//  integral = 0;
+//  fprintf(stderr, "Srch chasis l : %d x r : %d\n", c_sL, c_sR);
 
-  float P = x0 * PK;
-  float D = (x0 - x1) * DK;
-  float I = (x0 + x1) * IK;
-
-  int yaw = P + I + D;
-  
-  int speedL = (SPEED+yaw);  
-  int speedR = (SPEED-yaw);
-
-  if (speedL > 100)
+  if (!searching)
   {
-    speedR -= speedL - 100;
-    speedL = 100;
+    searching = true;
+    if(c_sL > c_sR)
+    {
+      do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 100); //16
+      do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, -20); //17
+    }
+    else
+    {
+      do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 20); //16
+      do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, -100); //17
+    }
+//    do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, c_sL); //16
+//    do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, -c_sR); //17
   }
-  else if (speedR > 100)
-  {
-    speedL -= speedR - 100;
-    speedR = 100;
-  }
-
-  fprintf(stderr, "Chasis l : %d x r : %d\n", speedL, speedR);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, speedL); //minus is because motors are always right!
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, speedL-15);  //for sake of LED-tape!
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, speedR-15); //for sake of LED-tape!
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight2, -speedR);
-
 #endif
-#if 0
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 0);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, 0);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, 0);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight2, 0);
-#endif
+
   return 0;
 }
 
+static int saturate(int min, int val, int max)
+{
+  return (val <= max) ? ((val >= min) ? val : min) : max;
+}
+
 //l0
-static int do_roverCtrlChasisTracking(RoverOutput* _rover, int _targetX, int _targetMass)
+static int do_roverCtrlChasisTracking(RoverOutput* _rover, int _targetX, int _targetY, int _targetMass)
 {
 
+  searching = false;
   RoverControlChasis* chasis = &_rover->m_ctrlChasis;
   float x;
-  float xold;
   float P, I, D;
   float yaw;
 
-#if 1
   x = powerProportional(_targetX, -100, chasis->m_zeroX, 100);
-  xold = chasis->m_lastYaw;
+
+  if(abs(x) < 10 && abs(m_xold) < 10)
+  {
+//    fprintf(stderr, "ROW! ROW! FIGHT THE POWER!");
+
+    do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 99); //16
+    do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, -99); //17
+
+    return;
+  }
 
   P = x * PK;
-  D = (x - xold) * DK;
-  I = (x + xold) * IK;
+  D = (x - m_xold) * DK;
+  I = (x + m_xold) * IK;
   yaw = P + I + D;
-  
+
+  m_xold = x;
+
+#if 0
+  static int lastL = 0;
+  static int lastR = 0;
+  static int incL = 2;
+  static int incR = 2;
+
+  int speedL = lastL;
+  int speedR = lastR;
+
+  lastL += incL;
+  lastR += incR;
+
+  if(lastL > 100)
+  {
+    lastL = 100;
+    incL = -incL;
+  }
+
+  if(lastL < -100)
+  {
+    lastL = -100;
+    incL = -incL;
+  }
+
+  if(lastR > 100)
+  {
+    lastR = 100;
+    incR = -incR;
+  }
+
+  if(lastR < -100)
+  {
+    lastR = -100;
+    incR = -incR;
+  }
 #endif
+
 #if 1
-  int dist = do_roverRangefinderGetValue(_rover, chasis->m_rangefinder);
+  int speedL = SPEED+yaw;  
+  int speedR = SPEED-yaw;
 
-  if (irrEnable && dist > 0x1b0 && dist < 0x02e0)
+  int maxSpeed = m_max(speedL, speedR);
+  int minSpeed = m_min(speedL, speedR);
+
+  if (maxSpeed > 100)
   {
-    fprintf(stderr, "Chasis l : %d x r : %d\n", 0, 0);
-    do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 0); //minus is because motors are always right!
-    do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, 0);
-    do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, 0);
-    do_roverMotorMspSetPower(_rover, chasis->m_motorRight2, 0);
-
-    return 0;
+    speedL = saturate(0, speedL - (maxSpeed - 100),100);
+    speedR = saturate(0, speedR - (maxSpeed - 100),100);
   }
-  
+
+  if (minSpeed < -100)
+  {
+    speedL = saturate(0, speedL - (minSpeed + 100),100);
+    speedR = saturate(0, speedR - (minSpeed + 100),100);
+  }
+
+  c_sL = speedL;// - minSpeed, 100); //for searching state
+  c_sR = speedR;// - minSpeed, 100); //for searching state
 #endif
-  if (_targetMass > min_target_mass) {
-    search_yaw[1] = search_yaw[0];
-    search_yaw[0] = chasis->m_lastYaw;
-  }
 
-  chasis->m_lastYaw = x;
-
-  int speedL = (SPEED+yaw);  
-  int speedR = (SPEED-yaw);
-  
-  if (speedL > 100)
+  if(yaw != chasis->m_lastYaw)
   {
-    speedR -= speedL - 100;
-    speedL = 100;
-  }
-  else if (speedR > 100)
-  {
-    speedL -= speedR - 100;
-    speedR = 100;
-  }
+    chasis->m_lastYaw = yaw;
 
-//  fprintf(stderr, "Target x: %d\n", _targetX);
-  fprintf(stderr, "Chasis l : %d x r : %d\n", speedL, speedR);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, speedL); //minus is because motors are always right!
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, speedL*(pow((float)speedL/100.0f,2)));  //for sake of LED-tape!
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, speedR*(pow((float)speedR/100.0f,2))); //for sake of LED-tape!
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight2, -speedR);
+//    fprintf(stderr, "Chasis l : %d x r : %d\n", speedL, speedR);
+
+    do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, speedL); //16
+    do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, -speedR); //17
+  }
 
   return 0;
 }
@@ -712,16 +757,6 @@ static int do_roverCtrlChasisTracking(RoverOutput* _rover, int _targetX, int _ta
 int roverOutputInit(bool _verbose)
 {
   (void)_verbose;
-/* to main
-  if ((fds.fd = open(m_path, O_RDONLY)) < 0)
-  {
-    fprintf(stderr, "Open rover pause button failed.\n");
-
-	  return 1;
-  } 
-
-  fds.events = POLLIN;
-*/
 
   return 0;
 }
@@ -837,7 +872,7 @@ void roverSetPause(RoverOutput* _rover)
   fprintf(stderr, "paused\n"); //tmp
 }
 
-int roverOutputControlAuto(RoverOutput* _rover, int _targetX, int _targetMass)
+int roverOutputControlAuto(RoverOutput* _rover, int _targetX, int _targetY, int _targetMass)
 {
 
   if (_rover == NULL)
@@ -891,6 +926,7 @@ int roverOutputControlAuto(RoverOutput* _rover, int _targetX, int _targetMass)
       }
       break;
 
+#if 0
     case StateSearching:
       do_roverCtrlChasisSearching(_rover);
 #if 1
@@ -904,15 +940,25 @@ int roverOutputControlAuto(RoverOutput* _rover, int _targetX, int _targetMass)
       break;
 
     case StateTracking:
-      do_roverCtrlChasisTracking(_rover, _targetX, _targetMass);
       if (_targetMass <= min_target_mass)
       {
         fprintf(stderr, "*** LOST TARGET ***\n");
         _rover->m_state = StateSearching;
         _rover->m_stateEntryTime.tv_sec = 0;
+        break;
       }
-
+      do_roverCtrlChasisTracking(_rover, _targetX, _targetY, _targetMass);
       break;
+#endif
+    default:
+
+      if (_targetMass <= min_target_mass)
+      {
+        do_roverCtrlChasisSearching(_rover);
+      } else {
+
+        do_roverCtrlChasisTracking(_rover, _targetX, _targetY, _targetMass);
+      }
   }
 
   return 0;

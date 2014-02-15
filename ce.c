@@ -193,7 +193,7 @@ static int do_transcodeFrame(CodecEngine* _ce,
                              float _detectHueFrom, float _detectHueTo,
                              float _detectSatFrom, float _detectSatTo,
                              float _detectValFrom, float _detectValTo,
-                             int* _targetX, int* _targetMass)
+                             int* _targetX, int* _targetY, int* _targetMass)
 {
   if (_ce->m_srcBuffer == NULL || _ce->m_dstBuffer == NULL/* || _ce->m_dstInfoBuffer == NULL*/)
     return ENOTCONN;
@@ -208,13 +208,15 @@ static int do_transcodeFrame(CodecEngine* _ce,
   tcInArgs.base.numBytes = _srcFrameSize;
   tcInArgs.base.inputID = 1; // must be non-zero, otherwise caching issues appear
 
+/*
   tcInArgs.alg.detectHueFrom = _detectHueFrom;
   tcInArgs.alg.detectHueTo   = _detectHueTo;
   tcInArgs.alg.detectSatFrom = _detectSatFrom;
   tcInArgs.alg.detectSatTo   = _detectSatTo;
+*/
   tcInArgs.alg.detectValFrom = _detectValFrom;
   tcInArgs.alg.detectValTo   = _detectValTo;
-  tcInArgs.alg.autoDetectHsv = autoDetectHsv;
+//  tcInArgs.alg.autoDetectHsv = autoDetectHsv;
 
   TRIK_VIDTRANSCODE_CV_OutArgs tcOutArgs;
   memset(&tcOutArgs,    0, sizeof(tcOutArgs));
@@ -277,14 +279,16 @@ static int do_transcodeFrame(CodecEngine* _ce,
   memcpy(_dstFramePtr, _ce->m_dstBuffer, *_dstFrameUsed);
 
   *_targetX    = tcOutArgs.alg.targetX;
-//  _targetY    = tcOutArgs.alg.targetY;
+  *_targetY    = tcOutArgs.alg.targetY;
   *_targetMass = (int)(tcOutArgs.alg.targetSize);
+/*
   autoDetectHue = tcOutArgs.alg.detectHue;
   autoDetectHueTolerance = tcOutArgs.alg.detectHueTolerance;
   autoDetectSat = tcOutArgs.alg.detectSat;
   autoDetectSatTolerance = tcOutArgs.alg.detectSatTolerance;
   autoDetectVal = tcOutArgs.alg.detectVal;
   autoDetectValTolerance = tcOutArgs.alg.detectValTolerance;
+*/
 
 /*
   fprintf(stderr, "hsv: (%d, %d) (%d, %d) (%d, %d)\n", autoDetectHueFrom, autoDetectHueTo, 
@@ -450,9 +454,9 @@ int codecEngineTranscodeFrame(CodecEngine* _ce,
                               float _detectHueFrom, float _detectHueTo,
                               float _detectSatFrom, float _detectSatTo,
                               float _detectValFrom, float _detectValTo,
-                              int* _targetX, int* _targetMass)
+                              int* _targetX, int* _targetY, int* _targetMass)
 {
-  if (_ce == NULL || _targetX == NULL || _targetMass == NULL)
+  if (_ce == NULL || _targetX == NULL || _targetY == NULL || _targetMass == NULL)
     return EINVAL;
 
   if (_ce->m_handle == NULL)
@@ -464,7 +468,7 @@ int codecEngineTranscodeFrame(CodecEngine* _ce,
                            _detectHueFrom, _detectHueTo,
                            _detectSatFrom, _detectSatTo,
                            _detectValFrom, _detectValTo,
-                           _targetX, _targetMass);
+                           _targetX, _targetY, _targetMass);
 }
 
 int codecEngineReportLoad(CodecEngine* _ce)

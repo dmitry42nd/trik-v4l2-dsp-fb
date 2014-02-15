@@ -40,6 +40,8 @@ float IK = 0.005;
 int SPEED = 70;
 
 //auto hsv range detector stuff
+
+/*
 bool autoDetectHsv = false;
 int	autoDetectHue = 0;
 int autoDetectHueTolerance = 0; 
@@ -47,7 +49,7 @@ int autoDetectSat = 0;
 int autoDetectSatTolerance = 0;  
 int autoDetectVal = 0;
 int autoDetectValTolerance = 0;
-
+*/
 //buttons stuff
 struct pollfd fds;
 const char* m_path = "/dev/input/by-path/platform-gpio-keys-event";
@@ -56,6 +58,7 @@ const char* m_path = "/dev/input/by-path/platform-gpio-keys-event";
 int roadWidth = 200;
 int inverseMotorCoeff = 1; 
 int irrEnable = 0;
+static bool music_playing = false;
 
 static sig_atomic_t s_terminate = false;
 static void sigterm_action(int _signal, siginfo_t* _siginfo, void* _context)
@@ -84,16 +87,16 @@ static bool s_cfgVerbose = false;
 static CodecEngineConfig s_cfgCodecEngine = { "dsp_server.xe674", "vidtranscode_cv" };
 static V4L2Config s_cfgV4L2Input = { "/dev/video0", 320, 240, V4L2_PIX_FMT_YUYV };
 static FBConfig s_cfgFBOutput = { "/dev/fb0" };
-static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x16, 0x10, 0x63 }, //msp left1
-                                        { 2, 0x48, 0x14, 0x10, 0x63 }, //msp left2  //0x16 for scorpio
-                                        { 2, 0x48, 0x15, 0x10, 0x63 }, //msp right1
-                                        { 2, 0x48, 0x17, 0x10, 0x63 }, //msp right2 //0x17 for scorpio
+static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x14, 0x01, 0x63 }, //msp left1
+                                        { 2, 0x48, 0x17, 0x01, 0x63 }, //msp left2  //0x16 for scorpio
+                                        { 2, 0x48, 0x16, 0x01, 0x63 }, //msp right1
+                                        { 2, 0x48, 0x15, 0x01, 0x63 }, //msp right2 //0x17 for scorpio
                                         { "/sys/class/pwm/ecap.0/duty_ns",     2300000, 1600000, 0, 1400000, 700000  }, //up-down m1
                                         { "/sys/class/pwm/ecap.1/duty_ns",     700000,  1400000, 0, 1600000, 2300000 }, //up-down m2
                                         { "/sys/class/pwm/ehrpwm.1:1/duty_ns", 700000,  1400000, 0, 1600000, 2300000 }, //squeeze
                                         { 2, 0x48, 0x20, 0xf0, 0x200}, //IR rangefinder
                                         0, 20, 2000};
-static RCConfig s_cfgRCInput = { 4444, false, false, /*27, 7, 75, 25, 70, 30*/0, 179, 50, 50, 30, 30};
+static RCConfig s_cfgRCInput = { 4444, false, false, /*27, 7, 75, 25, 70, 30*/0, 179, 50, 50, 35, 35};
 
 static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCInput* _rc, RoverOutput* _rover);
 
@@ -656,13 +659,13 @@ static int mainLoopV4L2Frame(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _f
                                        detectHueFrom, detectHueTo,
                                        detectSatFrom, detectSatTo,
                                        detectValFrom, detectValTo,
-                                       &targetX, &targetMass)) != 0)
+                                       &targetX, &targetY, &targetMass)) != 0)
   {
     fprintf(stderr, "codecEngineTranscodeFrame(%p[%zu] -> %p[%zu]) failed: %d\n",
             frameSrcPtr, frameSrcSize, frameDstPtr, frameDstSize, res);
     return res;
   }
-
+/*
   if(autoDetectHsv)
   {
     _rc->m_autoTargetDetectHue = autoDetectHue;
@@ -675,9 +678,9 @@ static int mainLoopV4L2Frame(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _f
     fprintf(stderr, "hsv   : %d %d %d\n", autoDetectHue, autoDetectSat, autoDetectVal);
     fprintf(stderr, "hsvTol: %d %d %d\n", autoDetectHueTolerance, autoDetectSatTolerance, autoDetectValTolerance);
   }
-  
+  */
   //fprintf log
-  //fprintf(stderr, "Target detected at %d x %d\n", targetX, targetMass);
+//  fprintf(stderr, "Target detected at %d x %d @ %d\n", targetX, targetY, targetMass);
 
   if (s_cfgVerbose)
   {
@@ -702,7 +705,7 @@ static int mainLoopV4L2Frame(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _f
 
   if (!rcInputIsManualMode(_rc))
   {
-    if ((res = roverOutputControlAuto(_rover, targetX, targetMass)) != 0)
+    if ((res = roverOutputControlAuto(_rover, targetX, targetY, targetMass)) != 0)
     {
       fprintf(stderr, "roverOutputControlAuto() failed: %d\n", res);
       return res;
@@ -811,16 +814,31 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
 
   struct input_event mev[1];
 
-  autoDetectHsv = false;
+//  autoDetectHsv = false;
   if (poll(&fds, 1, 0) > 0) //check for was pause button pressed
   {
     int res;
     if ((res = read(fds.fd, mev, sizeof(struct input_event))) != 1)
     {
-      if (mev[0].type == 1 && mev[0].code == 62 && mev[0].value == 1) 
+      if (mev[0].type == 1 && mev[0].code == 105 && mev[0].value == 1) 
         roverSetPause(_rover);
-      if (mev[0].type == 1 && mev[0].code == 64 && mev[0].value == 1) 
+      if (mev[0].type == 1 && mev[0].code == 139 && mev[0].value == 1) 
+      { 
+        if (!music_playing)
+        {
+          system("/home/root/music/start_music.sh");
+          music_playing = true;
+        }
+        else
+        {
+          system("/home/root/music/stop_music.sh");
+          music_playing = false;
+        }
+      }
+/*
+      if (mev[0].type == 1 && mev[0].code == 28 && mev[0].value == 1) 
         autoDetectHsv = true;
+*/
     }
   }
 
