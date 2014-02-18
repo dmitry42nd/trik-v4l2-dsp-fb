@@ -21,9 +21,21 @@ typedef struct RoverConfigMotorMsp
   int m_mspI2CBusId;
   int m_mspI2CDeviceId;
   int m_mspI2CMotorCmd;
+  int m_powerForwardMin;
+  int m_powerForwardMax;
+  int m_powerBackwardMin;
+  int m_powerBackwardMax;
+} RoverConfigMotorMsp;
+
+typedef struct RoverConfigHeadlamp
+{
+  int m_mspI2CBusId;
+  int m_mspI2CDeviceId;
+  int m_mspI2CHeadlampCmd;
   int m_powerMin;
   int m_powerMax;
-} RoverConfigMotorMsp;
+} RoverConfigHeadlamp;
+
 
 typedef struct RoverConfigIRRangefinder
 {
@@ -50,8 +62,8 @@ typedef struct RoverConfig // what user wants to set
 {
   RoverConfigMotorMsp m_motorMsp1;
   RoverConfigMotorMsp m_motorMsp2;
-  RoverConfigMotorMsp m_motorMsp3;
-  RoverConfigMotorMsp m_motorMsp4;
+  RoverConfigHeadlamp m_headlamp;
+//  RoverConfigMotorMsp m_motorMsp4;
   RoverConfigMotor m_motor1;
   RoverConfigMotor m_motor2;
   RoverConfigMotor m_motor3;
@@ -67,9 +79,20 @@ typedef struct RoverMotorMsp
   int m_i2cBusFd;
   int m_mspI2CDeviceId;
   int m_mspI2CMotorCmd;
+  int m_powerForwardMin;
+  int m_powerForwardMax;
+  int m_powerBackwardMin;
+  int m_powerBackwardMax;
+} RoverMotorMsp;
+
+typedef struct RoverHeadlamp
+{
+  int m_i2cBusFd;
+  int m_mspI2CDeviceId;
+  int m_mspI2CHeadlampCmd;
   int m_powerMin;
   int m_powerMax;
-} RoverMotorMsp;
+} RoverHeadlamp;
 
 typedef struct RoverIRRangefinder
 {
@@ -93,9 +116,8 @@ typedef struct RoverMotor
 typedef struct RoverControlChasis
 {
   RoverMotorMsp* m_motorLeft1;
-  RoverMotorMsp* m_motorLeft2;
   RoverMotorMsp* m_motorRight1;
-  RoverMotorMsp* m_motorRight2;
+  RoverHeadlamp* m_headlamp;
   RoverIRRangefinder* m_rangefinder;
 
   int         m_lastSpeed; // -100..100
@@ -128,8 +150,7 @@ typedef struct RoverOutput
 
   RoverMotorMsp m_motorMsp1;
   RoverMotorMsp m_motorMsp2;
-  RoverMotorMsp m_motorMsp3;
-  RoverMotorMsp m_motorMsp4;
+  RoverHeadlamp m_headlamp;
   RoverMotor m_motor1;
   RoverMotor m_motor2;
   RoverMotor m_motor3;
@@ -143,10 +164,11 @@ typedef struct RoverOutput
     StateManual,
     StatePreparing,
     StateSearching,
-    StateTracking,
+    StateTracking
+/*
     StateSqueezing,
-    StateReleasing,
-    StatePaused
+    StateReleasing
+*/
   } m_state;
   struct timespec m_stateEntryTime;
 
@@ -162,7 +184,6 @@ int roverOutputStart(RoverOutput* _rover);
 int roverOutputStop(RoverOutput* _rover);
 int roverOutputControlAuto(RoverOutput* _rover, int _targetX, int _targetY, int _targetMass);
 int roverOutputControlManual(RoverOutput* _rover, int _ctrlChasisLR, int _ctrlChasisFB, int _ctrlHand, int _ctrlArm);
-void roverSetPause(RoverOutput* _rover);
 
 #ifdef __cplusplus
 } // extern "C"

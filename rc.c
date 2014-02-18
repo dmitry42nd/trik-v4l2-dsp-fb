@@ -519,6 +519,15 @@ bool rcInputIsManualMode(RCInput* _rc)
   return _rc->m_manualMode;
 }
 
+int rcInputSetManualMode(RCInput* _rc, bool val)
+{
+  if (_rc == NULL)
+    return 0;
+
+  _rc->m_manualMode = val;
+  return 0;
+}
+
 int rcInputGetManualCommand(RCInput* _rc, int* _ctrlChasisLR, int* _ctrlChasisFB, int* _ctrlHand, int* _ctrlArm)
 {
   if (_rc == NULL)
