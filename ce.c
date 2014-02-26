@@ -240,8 +240,8 @@ static int do_transcodeFrame(CodecEngine* _ce,
   memcpy(_ce->m_srcBuffer, _srcFramePtr, _srcFrameSize);
 
   Memory_cacheWbInv(_ce->m_srcBuffer, _ce->m_srcBufferSize); // invalidate and flush *whole* cache, not only written portion, just in case
-  Memory_cacheInv(_ce->m_dstBuffer, _ce->m_dstBufferSize); // invalidate *whole* cache, not only expected portion, just in case
 /*  Memory_cacheInv(_ce->m_dstInfoBuffer, _ce->m_dstInfoBufferSize);*/
+  Memory_cacheInv(_ce->m_dstBuffer, _ce->m_dstBufferSize); // invalidate *whole* cache, not only expected portion, just in case
 
   XDAS_Int32 processResult = VIDTRANSCODE_process(_ce->m_vidtranscodeHandle, &tcInBufDesc, &tcOutBufDesc, &tcInArgs.base, &tcOutArgs);
   if (processResult != IVIDTRANSCODE_EOK)
@@ -286,6 +286,7 @@ static int do_transcodeFrame(CodecEngine* _ce,
   autoDetectSatTolerance = tcOutArgs.alg.detectSatTolerance;
   autoDetectVal = tcOutArgs.alg.detectVal;
   autoDetectValTolerance = tcOutArgs.alg.detectValTolerance;
+
   autoZeroMass = (int)(tcOutArgs.alg.targetSize);
   autoZeroY    = tcOutArgs.alg.targetY;
 /*

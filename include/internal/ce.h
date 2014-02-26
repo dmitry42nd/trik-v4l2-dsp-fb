@@ -14,6 +14,9 @@
 extern "C" {
 #endif // __cplusplus
 
+extern bool setHomeHsv;
+extern bool setBallHsv;
+
 extern bool autoDetectHsv;
 
 extern int autoDetectHue;
@@ -23,8 +26,28 @@ extern int autoDetectSatTolerance;
 extern int autoDetectVal;
 extern int autoDetectValTolerance;
 
-extern int  autoZeroMass;
-extern int  autoZeroY;
+extern int autoZeroMass;
+extern int autoZeroY;
+
+extern int ballHue;
+extern int ballHueTolerance;
+extern int ballSat;
+extern int ballSatTolerance;
+extern int ballVal;
+extern int ballValTolerance;
+
+extern int ballZeroMass;
+extern int ballZeroY;
+
+extern int homeHue;
+extern int homeHueTolerance;
+extern int homeSat;
+extern int homeSatTolerance;
+extern int homeVal;
+extern int homeValTolerance;
+
+extern int homeZeroMass;
+extern int homeZeroY;
 
 typedef struct CodecEngineConfig // what user wants to set
 {

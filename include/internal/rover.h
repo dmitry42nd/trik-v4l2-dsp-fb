@@ -145,6 +145,7 @@ typedef struct RoverOutput
     StateSearching,
     StateTracking,
     StateSqueezing,
+    StateGoHome,
     StateReleasing,
     StatePaused
   } m_state;

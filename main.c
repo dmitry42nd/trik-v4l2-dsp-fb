@@ -39,17 +39,45 @@ float DK = -0.0073;
 float IK = 0.005;
 int SPEED = 70;
 
-//auto hsv range detector stuff
 
+bool setBallHsv = false;
+bool setHomeHsv = false;
+
+bool autoDetectBall = false;
+bool autoDetectHome = false;
+
+//auto hsv range detector stuff
 bool autoDetectHsv = false;
+
 int	autoDetectHue = 0;
-int autoDetectHueTolerance = 0; 
+int autoDetectHueTolerance = 0;
 int autoDetectSat = 0;
-int autoDetectSatTolerance = 0;  
+int autoDetectSatTolerance = 0;
 int autoDetectVal = 0;
 int autoDetectValTolerance = 0;
+
+int ballHue = 358;
+int ballHueTolerance = 22;
+int ballSat = 61;
+int ballSatTolerance = 24;
+int ballVal = 52;
+int ballValTolerance = 21;
+
+int homeHue = 155;
+int homeHueTolerance = 21;
+int homeSat = 21;
+int homeSatTolerance = 9;
+int homeVal = 52;
+int homeValTolerance = 9;
+
 int autoZeroMass = 0;    
 int autoZeroY = 0;    
+
+int ballZeroMass;
+int ballZeroY;
+
+int homeZeroMass;
+int homeZeroY;
 
 //buttons stuff
 struct pollfd fds;
@@ -668,6 +696,8 @@ static int mainLoopV4L2Frame(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _f
   
   if(autoDetectHsv)
   {
+    autoDetectHsv = false;
+
     _rc->m_autoTargetDetectHue = autoDetectHue;
     _rc->m_autoTargetDetectHueTolerance = autoDetectHueTolerance;
     _rc->m_autoTargetDetectSat = autoDetectSat;
@@ -679,6 +709,86 @@ static int mainLoopV4L2Frame(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _f
     fprintf(stderr, "hsvTol: %d %d %d\n", autoDetectHueTolerance, autoDetectSatTolerance, autoDetectValTolerance);
   }
 
+  if(setBallHsv)
+  {
+    setBallHsv = false;
+
+    _rc->m_autoTargetDetectHue = ballHue;
+    _rc->m_autoTargetDetectHueTolerance = ballHueTolerance;
+    _rc->m_autoTargetDetectSat = ballSat;
+    _rc->m_autoTargetDetectSatTolerance = ballSatTolerance;
+    _rc->m_autoTargetDetectVal = ballVal;
+    _rc->m_autoTargetDetectValTolerance = ballValTolerance;
+
+    RoverControlChasis* chasis = &_rover->m_ctrlChasis;
+    RoverControlArm*       arm = &_rover->m_ctrlArm;
+    RoverControlHand*     hand = &_rover->m_ctrlHand;
+
+    chasis->m_zeroMass = ballZeroMass;
+    chasis->m_zeroY = ballZeroY;
+    arm->m_zeroMass = ballZeroMass;
+    arm->m_zeroY = ballZeroY;
+    hand->m_zeroY = ballZeroY;
+
+    fprintf(stderr, "hsv   : %d %d %d\n", ballHue, ballSat, ballVal);
+    fprintf(stderr, "hsvTol: %d %d %d\n", ballHueTolerance, ballSatTolerance, ballValTolerance);
+
+
+    fprintf(stderr, "Current zero mass: %d\n", chasis->m_zeroMass);
+    fprintf(stderr, "Current zero Y   : %d\n", chasis->m_zeroY);
+  }
+
+  if(setHomeHsv)
+  {
+    setHomeHsv = false;
+
+    _rc->m_autoTargetDetectHue = homeHue;
+    _rc->m_autoTargetDetectHueTolerance = homeHueTolerance;
+    _rc->m_autoTargetDetectSat = homeSat;
+    _rc->m_autoTargetDetectSatTolerance = homeSatTolerance;
+    _rc->m_autoTargetDetectVal = homeVal;
+    _rc->m_autoTargetDetectValTolerance = homeValTolerance;
+
+    RoverControlChasis* chasis = &_rover->m_ctrlChasis;
+    RoverControlArm*       arm = &_rover->m_ctrlArm;
+    RoverControlHand*     hand = &_rover->m_ctrlHand;
+
+    chasis->m_zeroMass = homeZeroMass;
+    chasis->m_zeroY = homeZeroY;
+    arm->m_zeroMass = homeZeroMass;
+    arm->m_zeroY = homeZeroY;
+    hand->m_zeroY = homeZeroY;
+
+    fprintf(stderr, "hsv   : %d %d %d\n", homeHue, homeSat, homeVal);
+    fprintf(stderr, "hsvTol: %d %d %d\n", homeHueTolerance, homeSatTolerance, homeValTolerance);
+
+    fprintf(stderr, "Current zero mass: %d\n", chasis->m_zeroMass);
+    fprintf(stderr, "Current zero Y   : %d\n", chasis->m_zeroY);
+  }
+
+  if(autoDetectBall)
+  {
+    autoDetectBall = false;
+
+    ballHue = autoDetectHue;
+    ballHueTolerance = autoDetectHueTolerance;
+    ballSat = autoDetectSat;
+    ballSatTolerance = autoDetectSatTolerance;
+    ballVal = autoDetectVal;
+    ballValTolerance = autoDetectValTolerance;
+  }
+
+  if(autoDetectHome)
+  {
+    autoDetectHome = false;
+
+    homeHue = autoDetectHue;
+    homeHueTolerance = autoDetectHueTolerance;
+    homeSat = autoDetectSat;
+    homeSatTolerance = autoDetectSatTolerance;
+    homeVal = autoDetectVal;
+    homeValTolerance = autoDetectValTolerance;
+  }
 
   //fprintf log
   //fprintf(stderr, "Target detected at %d x %d\n", targetX, targetMass);
@@ -815,7 +925,6 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
 
   struct input_event mev[1];
 
-  autoDetectHsv = false;
   if (poll(&fds, 1, 0) > 0) //check for was pause button pressed
   {
     int res;
@@ -825,20 +934,30 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
         roverSetPause(_rover);
       if (mev[0].type == 1 && mev[0].code == 62 && mev[0].value == 1) 
       {
-        RoverControlChasis* chasis = &_rover->m_ctrlChasis;
-        RoverControlArm*       arm = &_rover->m_ctrlArm;
+        ballZeroMass = autoZeroMass;
+        ballZeroY = autoZeroY;
 
-        RoverControlHand*     hand = &_rover->m_ctrlHand;
-        chasis->m_zeroMass = autoZeroMass;
-        chasis->m_zeroY = autoZeroY;
-        arm->m_zeroMass = autoZeroMass;
-        arm->m_zeroY = autoZeroY;
-        hand->m_zeroY = autoZeroY;
-        fprintf(stderr, "Current zero mass: %d\n", chasis->m_zeroMass);
-        fprintf(stderr, "Current zero Y   : %d\n", chasis->m_zeroY);
+        fprintf(stderr, "Current ball zero mass: %d\n", ballZeroMass);
+        fprintf(stderr, "Current ball zero Y   : %d\n", ballZeroY);
       }
       if (mev[0].type == 1 && mev[0].code == 64 && mev[0].value == 1) 
+      {
         autoDetectHsv = true;
+        autoDetectBall = true;
+      }
+      if (mev[0].type == 1 && mev[0].code == 63 && mev[0].value == 1) 
+      {
+        homeZeroMass = autoZeroMass;
+        homeZeroY = autoZeroY;
+
+        fprintf(stderr, "Current home zero mass: %d\n", homeZeroMass);
+        fprintf(stderr, "Current home zero Y   : %d\n", homeZeroY);
+      }
+      if (mev[0].type == 1 && mev[0].code == 65 && mev[0].value == 1) 
+      {
+        autoDetectHsv = true;
+        autoDetectHome = true;
+      }
     }
   }
 
@@ -867,13 +986,13 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
 
   if (_rc->m_stdinFd != -1 && FD_ISSET(_rc->m_stdinFd, &fdsIn))
   {
-    fprintf(stderr, "mainLoopRCStdin1\n");
+
     if ((res = mainLoopRCStdin(_ce, _v4l2Src, _fbDst, _rc, _rover)) != 0)
     {
       fprintf(stderr, "mainLoopRCStdin() failed: %d\n", res);
       return res;
     }
-    fprintf(stderr, "mainLoopRCStdin2\n");
+
     hasAnything = true;
   }
 
