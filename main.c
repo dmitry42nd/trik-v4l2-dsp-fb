@@ -39,6 +39,8 @@ float DK = -0.0073;
 float IK = 0.005;
 int SPEED = 70;
 
+int treeColor = 0;
+int treeColorEntry = 0;
 
 bool setBallHsv = false;
 bool setHomeHsv = false;
@@ -115,10 +117,10 @@ static bool s_cfgVerbose = false;
 static CodecEngineConfig s_cfgCodecEngine = { "dsp_server.xe674", "vidtranscode_cv" };
 static V4L2Config s_cfgV4L2Input = { "/dev/video0", 320, 240, V4L2_PIX_FMT_YUYV };
 static FBConfig s_cfgFBOutput = { "/dev/fb0" };
-static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x14, 0x12, 0x64 }, //msp left1
-                                        { 2, 0x48, 0x17, 0x12, 0x64 }, //msp left2  //0x16 for scorpio
-                                        { 2, 0x48, 0x15, 0x12, 0x64 }, //msp right1
-                                        { 2, 0x48, 0x16, 0x12, 0x64 }, //msp right2 //0x17 for scorpio
+static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x16, 0x0, 0x64 }, //red
+                                        { 2, 0x48, 0x17, 0x0, 0x64 }, //green
+                                        { 2, 0x48, 0x15, 0x0, 0x64 }, //blue
+                                        { 2, 0x48, 0x14, 0x0, 0x64 }, //power
                                         { "/sys/class/pwm/ecap.0/duty_ns",     2300000, 1600000, 0, 1400000, 700000  }, //up-down m1
                                         { "/sys/class/pwm/ecap.1/duty_ns",     700000,  1400000, 0, 1600000, 2300000 }, //up-down m2
                                         { "/sys/class/pwm/ehrpwm.1:1/duty_ns", 700000,  1400000, 0, 1600000, 2300000 }, //squeeze
@@ -932,32 +934,6 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
     {
       if (mev[0].type == 1 && mev[0].code == 60 && mev[0].value == 1) 
         roverSetPause(_rover);
-      if (mev[0].type == 1 && mev[0].code == 62 && mev[0].value == 1) 
-      {
-        ballZeroMass = autoZeroMass;
-        ballZeroY = autoZeroY;
-
-        fprintf(stderr, "Current ball zero mass: %d\n", ballZeroMass);
-        fprintf(stderr, "Current ball zero Y   : %d\n", ballZeroY);
-      }
-      if (mev[0].type == 1 && mev[0].code == 64 && mev[0].value == 1) 
-      {
-        autoDetectHsv = true;
-        autoDetectBall = true;
-      }
-      if (mev[0].type == 1 && mev[0].code == 63 && mev[0].value == 1) 
-      {
-        homeZeroMass = autoZeroMass;
-        homeZeroY = autoZeroY;
-
-        fprintf(stderr, "Current home zero mass: %d\n", homeZeroMass);
-        fprintf(stderr, "Current home zero Y   : %d\n", homeZeroY);
-      }
-      if (mev[0].type == 1 && mev[0].code == 65 && mev[0].value == 1) 
-      {
-        autoDetectHsv = true;
-        autoDetectHome = true;
-      }
     }
   }
 

@@ -140,14 +140,8 @@ typedef struct RoverOutput
 
   enum State
   {
-    StateManual,
-    StatePreparing,
-    StateSearching,
-    StateTracking,
-    StateSqueezing,
-    StateGoHome,
-    StateReleasing,
-    StatePaused
+    StatePaused,
+    StateLighting
   } m_state;
   struct timespec m_stateEntryTime;
 

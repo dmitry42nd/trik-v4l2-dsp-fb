@@ -208,6 +208,7 @@ static int do_transcodeFrame(CodecEngine* _ce,
   tcInArgs.base.numBytes = _srcFrameSize;
   tcInArgs.base.inputID = 1; // must be non-zero, otherwise caching issues appear
 
+/*
   tcInArgs.alg.detectHueFrom = _detectHueFrom;
   tcInArgs.alg.detectHueTo   = _detectHueTo;
   tcInArgs.alg.detectSatFrom = _detectSatFrom;
@@ -215,6 +216,10 @@ static int do_transcodeFrame(CodecEngine* _ce,
   tcInArgs.alg.detectValFrom = _detectValFrom;
   tcInArgs.alg.detectValTo   = _detectValTo;
   tcInArgs.alg.autoDetectHsv = autoDetectHsv;
+*/
+
+  tcInArgs.alg.inTreeColorEntry = treeColorEntry;
+  tcInArgs.alg.inTreeColor      = treeColor;
 
   TRIK_VIDTRANSCODE_CV_OutArgs tcOutArgs;
   memset(&tcOutArgs,    0, sizeof(tcOutArgs));
@@ -280,15 +285,8 @@ static int do_transcodeFrame(CodecEngine* _ce,
   *_targetY    = tcOutArgs.alg.targetY;
   *_targetMass = (int)(tcOutArgs.alg.targetSize);
   
-  autoDetectHue = tcOutArgs.alg.detectHue;
-  autoDetectHueTolerance = tcOutArgs.alg.detectHueTolerance;
-  autoDetectSat = tcOutArgs.alg.detectSat;
-  autoDetectSatTolerance = tcOutArgs.alg.detectSatTolerance;
-  autoDetectVal = tcOutArgs.alg.detectVal;
-  autoDetectValTolerance = tcOutArgs.alg.detectValTolerance;
-
-  autoZeroMass = (int)(tcOutArgs.alg.targetSize);
-  autoZeroY    = tcOutArgs.alg.targetY;
+  treeColor      = tcOutArgs.alg.outTreeColor;
+  treeColorEntry = tcOutArgs.alg.outTreeColorEntry;
 /*
   fprintf(stderr, "hsv: (%d, %d) (%d, %d) (%d, %d)\n", autoDetectHueFrom, autoDetectHueTo, 
                                                        autoDetectSatFrom, autoDetectSatTo,
