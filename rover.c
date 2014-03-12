@@ -529,7 +529,7 @@ static int do_roverCtrlChasisTracking(RoverOutput* _rover, int _targetX, int _ta
   yaw = powerProportional(_targetX, -100, chasis->m_zeroX, 100);
   yaw = powerIntegral(yaw, chasis->m_lastYaw, 10);
 
-  speed = powerProportional(_targetMass, 0, chasis->m_zeroMass, 10000); // back/forward based on ball size
+  speed = powerProportional(_targetMass, 0, chasis->m_zeroMass, 100); // back/forward based on ball size
   backSpeed = powerProportional(_targetY, -100, chasis->m_zeroY, 100); // move back/forward if ball leaves range
 
   if(m_chw || _targetMass < ((chasis->m_zeroMass)/6))
@@ -597,7 +597,7 @@ static int do_roverCtrlHandTracking(RoverOutput* _rover, int _targetX, int _targ
   int speed;
 
   speed = powerProportional(_targetY, -100, hand->m_zeroY, 100);
-  speed = powerIntegral(speed, hand->m_lastSpeed, 10);
+  speed = powerIntegral(speed, hand->m_lastSpeed, 5);
   
   hand->m_lastSpeed = speed;
 
@@ -605,7 +605,7 @@ static int do_roverCtrlHandTracking(RoverOutput* _rover, int _targetX, int _targ
 
   if (abs(speed)>15){ 
     m_chw = false;
-    speed = speed+sign(speed)*35;
+    speed = speed+sign(speed)*10;
   } else {
     speed = 0;
     m_chw = true;
@@ -625,7 +625,7 @@ static int do_roverCtrlArmTracking(RoverOutput* _rover, int _targetX, int _targe
 
   int diffX = powerProportional(_targetX, -100, arm->m_zeroX, 100);
   int diffY = powerProportional(_targetY, -100, arm->m_zeroY, 100);
-  int diffMass = powerProportional(_targetMass, 0, arm->m_zeroMass, 10000);
+  int diffMass = powerProportional(_targetMass, 0, arm->m_zeroMass, 100);
 
   bool hasLock = (   abs(diffX) <= 10
                   && abs(diffY) <= 10

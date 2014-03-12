@@ -821,9 +821,9 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
     int res;
     if ((res = read(fds.fd, mev, sizeof(struct input_event))) != 1)
     {
-      if (mev[0].type == 1 && mev[0].code == 60 && mev[0].value == 1) 
+      if (mev[0].type == 1 && mev[0].code == KEY_MENU && mev[0].value == 1) //KEY_MENU = 139
         roverSetPause(_rover);
-      if (mev[0].type == 1 && mev[0].code == 62 && mev[0].value == 1) 
+      if (mev[0].type == 1 && mev[0].code == KEY_LEFT && mev[0].value == 1) //KEY_LEFT = 105
       {
         RoverControlChasis* chasis = &_rover->m_ctrlChasis;
         RoverControlArm*       arm = &_rover->m_ctrlArm;
@@ -837,7 +837,7 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
         fprintf(stderr, "Current zero mass: %d\n", chasis->m_zeroMass);
         fprintf(stderr, "Current zero Y   : %d\n", chasis->m_zeroY);
       }
-      if (mev[0].type == 1 && mev[0].code == 64 && mev[0].value == 1) 
+      if (mev[0].type == 1 && mev[0].code == KEY_DOWN && mev[0].value == 1) //KEY_DOWN = 108
         autoDetectHsv = true;
     }
   }
