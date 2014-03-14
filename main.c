@@ -55,7 +55,6 @@ struct pollfd fds;
 const char* m_path = "/dev/input/by-path/platform-gpio-keys-event";
 
 //rover stuff
-//int roadWidth = 200;
 int inverseMotorCoeff = 1; 
 int irrEnable = 0;
 static bool music_playing = false;
@@ -665,6 +664,7 @@ static int mainLoopV4L2Frame(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _f
 
   if(autoDetectHsv)
   {
+    autoDetectHsv = false;
     _rc->m_autoTargetDetectHue = autoDetectHue;
     _rc->m_autoTargetDetectHueTolerance = autoDetectHueTolerance;
     _rc->m_autoTargetDetectSat = autoDetectSat;
@@ -812,7 +812,6 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
 
   struct input_event mev[1];
 
-  autoDetectHsv = false;
   if (poll(&fds, 1, 0) > 0) //check for was pause button pressed
   {
     int res;
@@ -822,7 +821,6 @@ static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCI
       {
         rcInputSetManualMode(_rc, (_rc->m_manualMode ? false : true));
         roverOutputStop(_rover);
-//        fprintf(stderr, "pause buttom pressed\n");
       }
 /* //TODO: repair shitcode
       if (mev[0].type == 1 && mev[0].code == 139 && mev[0].value == 1) 

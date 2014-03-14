@@ -885,8 +885,6 @@ int roverOutputStart(RoverOutput* _rover)
   do_roverMotorSetPower(_rover, &_rover->m_motor2, 0);
   do_roverMotorSetPower(_rover, &_rover->m_motor3, 0);
 
-  do_roverCtrlChasisStart(_rover);
-  do_roverCtrlHandStart(_rover);
   do_roverCtrlArmStart(_rover);
 
   return 0;
@@ -925,10 +923,7 @@ int roverOutputControlManual(RoverOutput* _rover, int _ctrlChasisLR, int _ctrlCh
   }
 
   do_roverCtrlChasisManual(_rover, _ctrlChasisLR, _ctrlChasisFB);
-/*
-  do_roverCtrlHandManual(_rover, _ctrlHand);
-  do_roverCtrlArmManual(_rover, _ctrlArm);
-*/
+
   return 0;
 }
 
@@ -952,10 +947,7 @@ int roverOutputControlAuto(RoverOutput* _rover, int _targetX, int _targetY, int 
   {
     case StateManual:
       do_roverCtrlChasisManual(_rover, 0, 0);
-/*
-      do_roverCtrlHandManual(_rover, 0);
-      do_roverCtrlArmManual(_rover, 0);
-*/
+
       fprintf(stderr, "*** LEFT MANUAL MODE, PREPARING ***\n");
       _rover->m_state = StatePreparing;
       _rover->m_stateEntryTime.tv_sec = 0;
@@ -963,12 +955,9 @@ int roverOutputControlAuto(RoverOutput* _rover, int _targetX, int _targetY, int 
 
     case StatePreparing:
       do_roverCtrlChasisPreparing(_rover);
-//      if (msPassed > 2000)
-//      {
-        fprintf(stderr, "*** PREPARED, SEARCHING ***\n");
-        _rover->m_state = StateSearching;
-        _rover->m_stateEntryTime.tv_sec = 0;
-//      }
+      fprintf(stderr, "*** PREPARED, SEARCHING ***\n");
+      _rover->m_state = StateSearching;
+      _rover->m_stateEntryTime.tv_sec = 0;
       break;
 
     case StateSearching:
