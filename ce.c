@@ -21,6 +21,8 @@
 
 #define ALIGN_UP(v, a) ((((v)+(a)-1)/(a))*(a))
 
+static int m_cntr = 0;
+
 static int do_memoryAlloc(CodecEngine* _ce, size_t _srcBufferSize, size_t _dstBufferSize)
 {
   memset(&_ce->m_allocParams, 0, sizeof(_ce->m_allocParams));
@@ -275,7 +277,17 @@ static int do_transcodeFrame(CodecEngine* _ce,
     *_dstFrameUsed = tcOutArgs.base.encodedBuf[0].bufSize;
 
 
-  memcpy(_dstFramePtr, _ce->m_dstBuffer, *_dstFrameUsed);
+  if (m_cntr > 5)
+  {
+    m_cntr = 0;
+
+    memcpy(_dstFramePtr, _ce->m_dstBuffer, *_dstFrameUsed);
+
+  }
+  else
+  {
+    m_cntr++;
+  }
 
   *_targetX    = tcOutArgs.alg.targetX;
   *_targetY    = tcOutArgs.alg.targetY;

@@ -678,7 +678,7 @@ static int mainLoopV4L2Frame(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _f
   }
 
   //fprintf log
-  //fprintf(stderr, "Target detected at %d x %d @ %d\n", targetX, targetY, targetMass);
+//  fprintf(stderr, "Target detected at %d x %d @ %d\n", targetX, targetY, targetMass);
 
   if (s_cfgVerbose)
   {
