@@ -96,7 +96,7 @@ static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x14, 0x12, 0x64 }, //msp lef
                                         { "/sys/class/pwm/ehrpwm.1:1/duty_ns", 700000,  1400000, 0, 1600000, 2300000 }, //squeeze
                                         { 2, 0x48, 0x20, 0xf0, 0x200}, //IR rangefinder
                                         0, 50, 30};
-static RCConfig s_cfgRCInput = { 4444, false, false, 27, 7, 75, 25, 70, 30};
+static RCConfig s_cfgRCInput = { 4444, false, false, 0, 179, 45, 45, 20, 20};
 
 static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCInput* _rc, RoverOutput* _rover);
 
