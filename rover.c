@@ -731,7 +731,7 @@ static int do_roverCtrlChasisTracking(RoverOutput* _rover, int _targetX, int _ta
 
   x = powerProportional(_targetX, -100, chasis->m_zeroX, 100);
 
-  if(abs(x) < 16 && abs(m_xold) < 16)
+  if(abs(x) < 10 && abs(m_xold) < 10)
   {
     fprintf(stderr, "ROW! ROW! FIGHT THE POWER!");
     do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 100);
