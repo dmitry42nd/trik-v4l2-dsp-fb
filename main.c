@@ -86,7 +86,7 @@ static bool s_cfgVerbose = false;
 static CodecEngineConfig s_cfgCodecEngine = { "dsp_server.xe674", "vidtranscode_cv" };
 static V4L2Config s_cfgV4L2Input = { "/dev/video0", 320, 240, V4L2_PIX_FMT_YUYV };
 static FBConfig s_cfgFBOutput = { "/dev/fb0" };
-static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x14, 0x01, 0x63, 0xff, 0x9d }, //msp left1
+static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x14, 0xff, 0x9d, 0x01, 0x63 }, //msp left1
                                         { 2, 0x48, 0x17, 0xff, 0x9d, 0x01, 0x63 }, //msp right1
                                         { 2, 0x48, 0x15, 0xff, 0x9c }, //headlamp
                                         { "/sys/class/pwm/ecap.0/duty_ns",     2300000, 1600000, 0, 1400000, 700000  }, //up-down m1

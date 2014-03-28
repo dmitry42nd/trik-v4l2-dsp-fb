@@ -213,7 +213,7 @@ static int do_roverCloseRangefinder(RoverOutput* _rover,
 }
 
 
-
+/*
 static int do_roverOpenMotor(RoverOutput* _rover,
                              RoverMotor* _motor,
                              const RoverConfigMotor* _config)
@@ -240,7 +240,8 @@ static int do_roverOpenMotor(RoverOutput* _rover,
 
   return 0;
 }
-
+*/
+/*
 static int do_roverCloseMotor(RoverOutput* _rover,
                               RoverMotor* _motor)
 {
@@ -259,7 +260,7 @@ static int do_roverCloseMotor(RoverOutput* _rover,
 
   return 0;
 }
-
+*/
 static int do_roverOpen(RoverOutput* _rover,
                         const RoverConfig* _config)
 {
@@ -285,7 +286,7 @@ static int do_roverOpen(RoverOutput* _rover,
     do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp1);
     return res;
   }
-
+/*
   if ((res = do_roverOpenMotor(_rover, &_rover->m_motor1, &_config->m_motor1)) != 0)
   {
     do_roverCloseHeadlamp(_rover, &_rover->m_headlamp); 
@@ -312,12 +313,14 @@ static int do_roverOpen(RoverOutput* _rover,
     do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp1);
     return res;
   }
-
+*/
   if ((res = do_roverOpenRangefinder(_rover, &_rover->m_rangefinder, &_config->m_rangefinder)) != 0)
   {
+/*
     do_roverCloseMotor(_rover, &_rover->m_motor3);
     do_roverCloseMotor(_rover, &_rover->m_motor2);
     do_roverCloseMotor(_rover, &_rover->m_motor1);
+*/
     do_roverCloseHeadlamp(_rover, &_rover->m_headlamp);
     do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp2);
     do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp1);
@@ -332,9 +335,11 @@ static int do_roverClose(RoverOutput* _rover)
   if (_rover == NULL)
     return EINVAL;
 
+/*
   do_roverCloseMotor(_rover, &_rover->m_motor3);
   do_roverCloseMotor(_rover, &_rover->m_motor2);
   do_roverCloseMotor(_rover, &_rover->m_motor1);
+*/
   do_roverCloseHeadlamp(_rover, &_rover->m_headlamp);
   do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp2);
   do_roverCloseMotorMsp(_rover, &_rover->m_motorMsp1);
@@ -698,11 +703,11 @@ static int do_roverCtrlChasisSearching(RoverOutput* _rover)
     if(c_sL > c_sR)
     {
       do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 100); 
-      do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, 20);
+      do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, 30);
     }
     else if (c_sL < c_sR)
     {
-      do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 20);
+      do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 30);
       do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, 100);
     } else
     {
