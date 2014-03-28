@@ -13,7 +13,7 @@
 
 #include "internal/rc.h"
 
-
+static bool music_playing = false;
 
 
 static int do_openServerFd(RCInput* _rc, int _port)
@@ -346,6 +346,19 @@ static int do_readConnection(RCInput* _rc)
           _rc->m_manualMode = true;
         else if (btn == 2)
           _rc->m_manualMode = false;
+        else if (btn == 3)
+        {
+          if (!music_playing)
+          {
+            system("/home/root/music/start_music.sh");
+            music_playing = true;
+          }
+          else
+          {
+            system("/home/root/music/stop_music.sh");
+            music_playing = false;
+          }
+        }
       }
       else
         fprintf(stderr, "Failed to parse btn arguments '%s'\n", parseAt);
