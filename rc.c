@@ -359,6 +359,12 @@ static int do_readConnection(RCInput* _rc)
             music_playing = false;
           }
         }
+        else if (btn == 4)
+        {
+          char cmd[1000];
+          sprintf(cmd, "espeak -v russian_test -s 100 \"%s\"",rc_speech);
+          system(cmd);
+        }
       }
       else
         fprintf(stderr, "Failed to parse btn arguments '%s'\n", parseAt);

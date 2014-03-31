@@ -8,6 +8,7 @@
 extern "C" {
 #endif // __cplusplus
 
+extern char* rc_speech;
 
 typedef struct RCConfig // what user wants to set
 {

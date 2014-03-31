@@ -82,6 +82,8 @@ static void sigactions_setup()
     fprintf(stderr, "sigaction(SIGINT) failed: %d\n", errno);
 }
 
+char* rc_speech = "Привет! Я - роообот.";
+
 
 static bool s_cfgVerbose = false;
 static CodecEngineConfig s_cfgCodecEngine = { "dsp_server.xe674", "vidtranscode_cv" };
@@ -174,6 +176,7 @@ static bool parse_args(int _argc, char* const _argv[])
     { "target-hue-tolerance",	1,	NULL,	0   },
     { "inverse-motors",	1,	NULL,	0   }, // 62
     { "irr-enable",	1,	NULL,	0   }, // 63
+    { "say",	1,	NULL,	0   }, // 64
     { "verbose",		0,	NULL,	'v' },
     { "help",			0,	NULL,	'h' },
     {NULL, 0, NULL, 0}
@@ -279,6 +282,7 @@ static bool parse_args(int _argc, char* const _argv[])
           case 61: s_cfgRCInput.m_autoTargetDetectHueTolerance = atof(optarg);	break;
           case 62: inverseMotorCoeff = atof(optarg) == 0 ? 1 : -1;	break;
           case 63: irrEnable = atoi(optarg);	break;
+          case 64: rc_speech = optarg;		break;
           default:
             return false;
         }
@@ -352,7 +356,8 @@ int main(int _argc, char* const _argv[])
                     "   --speed                 <speed>\n" 
                     "   --road-width            <road-width>\n"      
                     "   --inverse-motors        <inverse-motors 0/1>\n"      
-                    "   --irr-enable            <ir-rangefinder-enbale 0/1>\n"      
+                    "   --irr-enable            <ir-rangefinder-enbale 0/1>\n"
+                    "   --say                   <set-speech> \n"            
                     "   --verbose\n"
                     "   --help\n",
             _argv[0]);
