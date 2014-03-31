@@ -603,7 +603,7 @@ static int do_roverCtrlHandTracking(RoverOutput* _rover, int _targetX, int _targ
 
   fprintf(stderr, "Hand: %d\n", speed);
 
-  if (abs(speed)>15){ 
+  if (abs(speed)>10){ 
     m_chw = false;
     speed = speed+sign(speed)*10;
   } else {
