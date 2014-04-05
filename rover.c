@@ -980,6 +980,7 @@ int roverOutputControlAuto(RoverOutput* _rover, int _targetX, int _targetY, int 
       if (_targetMass <= min_target_mass)
       {
         fprintf(stderr, "*** LOST TARGET ***\n");
+        m_xold = 0;
         _rover->m_state = StateSearching;
         _rover->m_stateEntryTime.tv_sec = 0;
         break;
