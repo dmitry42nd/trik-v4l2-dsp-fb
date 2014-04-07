@@ -22,7 +22,7 @@ typedef struct RCConfig // what user wants to set
   float m_autoTargetDetectVal;
   float m_autoTargetDetectValTolerance;
 } RCConfig;
-
+ 
 typedef struct RCInput
 {
   int                      m_stdinFd;
@@ -56,6 +56,7 @@ int rcInputClose(RCInput* _rc);
 int rcInputStart(RCInput* _rc);
 int rcInputStop(RCInput* _rc);
 
+int rcInputSetManualMode(RCInput* _rc, bool val);
 int rcInputReadStdin(RCInput* _rc);
 int rcInputAcceptConnection(RCInput* _rc);
 int rcInputReadConnection(RCInput* _rc);
