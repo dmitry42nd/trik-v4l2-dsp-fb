@@ -18,7 +18,7 @@
 
 #include "internal/rover.h"
 
-static int min_target_mass = 2;
+static int min_target_mass = 2; //noise treshold
 
 static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command, int size, union i2c_smbus_data *data)
 {
@@ -449,27 +449,18 @@ static int powerProportional(int _val, int _min, int _zero, int _max)
     return 0;
 }
 
-#if 0 //on pause switch to manual mode
-static int do_roverCtrlChasisPaused(RoverOutput* _rover){
-  RoverControlChasis* chasis = &_rover->m_ctrlChasis;
-  searching = false;
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft1, 0);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorLeft2, 0);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight1, 0);
-  do_roverMotorMspSetPower(_rover, chasis->m_motorRight2, 0);
-  return 0;
-}
-#endif
 
 static int m_max(int a, int b)
 {
   return a >= b ? a : b;
 }
 
+
 static int m_min(int a, int b)
 {
   return a <= b ? a : b;
 }
+
 
 static int do_roverCtrlChasisSearching(RoverOutput* _rover)
 {
@@ -494,10 +485,12 @@ static int do_roverCtrlChasisSearching(RoverOutput* _rover)
   return 0;
 }
 
+
 static int saturate(int min, int val, int max)
 {
   return (val <= max) ? ((val >= min) ? val : min) : max;
 }
+
 
 static int do_roverCtrlChasisTracking(RoverOutput* _rover, int _targetX, int _targetY, int _targetMass)
 {

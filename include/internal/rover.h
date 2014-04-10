@@ -13,6 +13,7 @@ extern float PK;
 extern float DK;
 extern float IK;
 extern int SPEED;
+
 extern int inverseMotorCoeff;
 extern int irrEnable;
 

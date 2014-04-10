@@ -91,7 +91,7 @@ static RoverConfig s_cfgRoverOutput = { { 2, 0x48, 0x14, 0x01, 0x63, 0xff, 0x9d 
                                         { 2, 0x48, 0x15, 0xff, 0x9c }, //headlamp
                                         { 2, 0x48, 0x20, 0xf0, 0x200}, //IR rangefinder
                                         0, 20, 2000};
-static RCConfig s_cfgRCInput = { 4444, false, true, /*27, 7, 75, 25, 70, 30*/0, 179, 50, 50, 35, 35};
+static RCConfig s_cfgRCInput = { 4444, false, true, 0, 179, 50, 50, 35, 35};
 
 static int mainLoop(CodecEngine* _ce, V4L2Input* _v4l2Src, FBOutput* _fbDst, RCInput* _rc, RoverOutput* _rover);
 
@@ -111,45 +111,46 @@ static bool parse_args(int _argc, char* const _argv[])
     { "v4l2-height",		1,	NULL,	0   },
     { "v4l2-format",		1,	NULL,	0   },
     { "fb-path",		1,	NULL,	0   }, // 6
+
     { "rover-msp-m1-i2c-bus",	1,	NULL,	0   }, // 7
     { "rover-msp-m1-i2c-dev",	1,	NULL,	0   },
     { "rover-msp-m1-i2c-cmd",	1,	NULL,	0   },
-    { "rover-msp-m1-min",	1,	NULL,	0   },
-    { "rover-msp-m1-max",	1,	NULL,	0   },
-    { "rover-msp-m2-i2c-bus",	1,	NULL,	0   }, // 12
+    { "rover-msp-m1-bmin",	1,	NULL,	0   }, //10
+    { "rover-msp-m1-bmax",	1,	NULL,	0   },
+    { "rover-msp-m1-fmin",	1,	NULL,	0   },
+    { "rover-msp-m1-fmax",	1,	NULL,	0   },
+
+    { "rover-msp-m2-i2c-bus",	1,	NULL,	0   }, // 14
     { "rover-msp-m2-i2c-dev",	1,	NULL,	0   },
     { "rover-msp-m2-i2c-cmd",	1,	NULL,	0   },
-    { "rover-msp-m2-min",	1,	NULL,	0   },
-    { "rover-msp-m2-max",	1,	NULL,	0   },
-    { "rover-msp-m3-i2c-bus",	1,	NULL,	0   }, // 17
-    { "rover-msp-m3-i2c-dev",	1,	NULL,	0   },
-    { "rover-msp-m3-i2c-cmd",	1,	NULL,	0   },
-    { "rover-msp-m3-min",	1,	NULL,	0   },
-    { "rover-msp-m3-max",	1,	NULL,	0   },
-    { "rover-msp-m4-i2c-bus",	1,	NULL,	0   }, // 22
-    { "rover-msp-m4-i2c-dev",	1,	NULL,	0   },
-    { "rover-msp-m4-i2c-cmd",	1,	NULL,	0   },
-    { "rover-msp-m4-min",	1,	NULL,	0   },
-    { "rover-msp-m4-max",	1,	NULL,	0   },
-    { "rover-zero-x",		1,	NULL,	0   }, // 27
+    { "rover-msp-m2-bmin",	1,	NULL,	0   },
+    { "rover-msp-m2-bmax",	1,	NULL,	0   },
+    { "rover-msp-m2-fmin",	1,	NULL,	0   },
+    { "rover-msp-m2-fmax",	1,	NULL,	0   },
+
+    { "rover-zero-x",		1,	NULL,	0   }, // 21
     { "rover-zero-y",		1,	NULL,	0   },
     { "rover-zero-mass",	1,	NULL,	0   },
-    { "rc-port",		1,	NULL,	0   }, // 30
+
+    { "rc-port",		1,	NULL,	0   }, // 24
     { "rc-stdin",		1,	NULL,	0   },
     { "rc-manual",		1,	NULL,	0   },
-    { "target-sat",		1,	NULL,	0   }, // 33
-    { "target-sat-tolerance",	1,	NULL,	0   },
-    { "target-val",		1,	NULL,	0   }, // 35
-    { "target-val-tolerance",	1,	NULL,	0   },
-    { "pk",		1,	NULL,	0   }, 
-    { "dk",		1,	NULL,	0   }, //38
-    { "ik",		1,	NULL,	0   },
-    { "speed",		1,	NULL,	0   }, //40
-    { "road-width",	1,	NULL,	0   },
-    { "target-hue",		1,	NULL,	0   }, // 42
+
+    { "target-hue",		1,	NULL,	0   }, // 27
     { "target-hue-tolerance",	1,	NULL,	0   },
-    { "inverse-motors",	1,	NULL,	0   }, // 44
-    { "irr-enable",	1,	NULL,	0   }, // 45
+    { "target-sat",		1,	NULL,	0   }, // 29
+    { "target-sat-tolerance",	1,	NULL,	0   },
+    { "target-val",		1,	NULL,	0   }, // 31
+    { "target-val-tolerance",	1,	NULL,	0   },
+
+    { "pk",		1,	NULL,	0   }, 
+    { "dk",		1,	NULL,	0   }, //34
+    { "ik",		1,	NULL,	0   },
+    { "speed",		1,	NULL,	0   }, //36
+
+    { "inverse-motors",	1,	NULL,	0   }, // 37
+    { "irr-enable",	1,	NULL,	0   }, // 38
+
     { "verbose",		0,	NULL,	'v' },
     { "help",			0,	NULL,	'h' },
     {NULL, 0, NULL, 0}
@@ -193,37 +194,41 @@ static bool parse_args(int _argc, char* const _argv[])
           case 7: s_cfgRoverOutput.m_motorMsp1.m_mspI2CBusId    = atoi(optarg);	break;
           case 8: s_cfgRoverOutput.m_motorMsp1.m_mspI2CDeviceId = atoi(optarg);	break;
           case 9: s_cfgRoverOutput.m_motorMsp1.m_mspI2CMotorCmd = atoi(optarg);	break;
-          case 10: s_cfgRoverOutput.m_motorMsp1.m_powerForwardMin       = atoi(optarg);	break;
-          case 11: s_cfgRoverOutput.m_motorMsp1.m_powerForwardMax       = atoi(optarg);	break;
+          case 10: s_cfgRoverOutput.m_motorMsp1.m_powerBackwardMin      = atoi(optarg);	break;
+          case 11: s_cfgRoverOutput.m_motorMsp1.m_powerBackwardMax      = atoi(optarg);	break;
+          case 12: s_cfgRoverOutput.m_motorMsp1.m_powerForwardMin       = atoi(optarg);	break;
+          case 13: s_cfgRoverOutput.m_motorMsp1.m_powerForwardMax       = atoi(optarg);	break;
 
-          case 12: s_cfgRoverOutput.m_motorMsp2.m_mspI2CBusId    = atoi(optarg);	break;
-          case 13: s_cfgRoverOutput.m_motorMsp2.m_mspI2CDeviceId = atoi(optarg);	break;
-          case 14: s_cfgRoverOutput.m_motorMsp2.m_mspI2CMotorCmd = atoi(optarg);	break;
-          case 15: s_cfgRoverOutput.m_motorMsp2.m_powerForwardMin       = atoi(optarg);	break;
-          case 16: s_cfgRoverOutput.m_motorMsp2.m_powerForwardMax       = atoi(optarg);	break;
+          case 14: s_cfgRoverOutput.m_motorMsp2.m_mspI2CBusId    = atoi(optarg);	break;
+          case 15: s_cfgRoverOutput.m_motorMsp2.m_mspI2CDeviceId = atoi(optarg);	break;
+          case 16: s_cfgRoverOutput.m_motorMsp2.m_mspI2CMotorCmd = atoi(optarg);	break;
+          case 17: s_cfgRoverOutput.m_motorMsp2.m_powerBackwardMin       = atoi(optarg);	break;
+          case 18: s_cfgRoverOutput.m_motorMsp2.m_powerBackwardMax      = atoi(optarg);	break;
+          case 19: s_cfgRoverOutput.m_motorMsp2.m_powerForwardMin       = atoi(optarg);	break;
+          case 20: s_cfgRoverOutput.m_motorMsp2.m_powerForwardMax       = atoi(optarg);	break;
 
-          case 17: s_cfgRoverOutput.m_zeroX    = atoi(optarg);	break;
-          case 18: s_cfgRoverOutput.m_zeroY    = atoi(optarg);	break;
-          case 19: s_cfgRoverOutput.m_zeroMass = atoi(optarg);	break;
+          case 21: s_cfgRoverOutput.m_zeroX    = atoi(optarg);	break;
+          case 22: s_cfgRoverOutput.m_zeroY    = atoi(optarg);	break;
+          case 23: s_cfgRoverOutput.m_zeroMass = atoi(optarg);	break;
 
-          case 20: s_cfgRCInput.m_port = atoi(optarg);				break;
-          case 21: s_cfgRCInput.m_stdin = atoi(optarg);				break;
-          case 22: s_cfgRCInput.m_manualMode = atoi(optarg);			break;
+          case 24: s_cfgRCInput.m_port = atoi(optarg);				break;
+          case 25: s_cfgRCInput.m_stdin = atoi(optarg);				break;
+          case 26: s_cfgRCInput.m_manualMode = atoi(optarg);			break;
 
-          case 23: s_cfgRCInput.m_autoTargetDetectHue = atof(optarg);		break;
-          case 24: s_cfgRCInput.m_autoTargetDetectHueTolerance = atof(optarg);	break;
-          case 25: s_cfgRCInput.m_autoTargetDetectSat = atof(optarg);		break;
-          case 26: s_cfgRCInput.m_autoTargetDetectSatTolerance = atof(optarg);	break;
-          case 27: s_cfgRCInput.m_autoTargetDetectVal = atof(optarg);		break;
-          case 28: s_cfgRCInput.m_autoTargetDetectValTolerance = atof(optarg);	break;
+          case 27: s_cfgRCInput.m_autoTargetDetectHue = atof(optarg);		break;
+          case 28: s_cfgRCInput.m_autoTargetDetectHueTolerance = atof(optarg);	break;
+          case 29: s_cfgRCInput.m_autoTargetDetectSat = atof(optarg);		break;
+          case 30: s_cfgRCInput.m_autoTargetDetectSatTolerance = atof(optarg);	break;
+          case 31: s_cfgRCInput.m_autoTargetDetectVal = atof(optarg);		break;
+          case 32: s_cfgRCInput.m_autoTargetDetectValTolerance = atof(optarg);	break;
 
-          case 29: PK = atof(optarg);		break;
-          case 30: DK = atof(optarg);	break;
-          case 31: IK = atof(optarg);		break;
-          case 32: SPEED = atof(optarg);	break;
+          case 33: PK = atof(optarg);		break;
+          case 34: DK = atof(optarg);	break;
+          case 35: IK = atof(optarg);		break;
+          case 36: SPEED = atof(optarg);	break;
 
-          case 33: inverseMotorCoeff = atof(optarg) == 0 ? 1 : -1;	break;
-          case 34: irrEnable = atoi(optarg);	break;
+          case 37: inverseMotorCoeff = atof(optarg) == 0 ? 1 : -1;	break;
+          case 38: irrEnable = atoi(optarg);	break;
           default:
             return false;
         }
@@ -271,8 +276,10 @@ int main(int _argc, char* const _argv[])
                     "   --rover-msp-mN-i2c-bus  <rover-msp-motorN-i2c-bus-id>\n"
                     "   --rover-msp-mN-i2c-dev  <rover-msp-motorN-i2c-device-id>\n"
                     "   --rover-msp-mN-i2c-cmd  <rover-msp-motorN-i2c-command>\n"
-                    "   --rover-msp-mN-min      <rover-msp-motorN-min-power>\n"
-                    "   --rover-msp-mN-max      <rover-msp-motorN-max-power>\n"
+                    "   --rover-msp-mN-bmin      <rover-msp-motorN-backward-min-power>\n"
+                    "   --rover-msp-mN-bmax      <rover-msp-motorN-backward-max-power>\n"
+                    "   --rover-msp-mN-fmin      <rover-msp-motorN-forward-min-power>\n"
+                    "   --rover-msp-mN-fmax      <rover-msp-motorN-forward-max-power>\n"
                     "   --rover-zero-x          <rover-center-X>\n"
                     "   --rover-zero-y          <rover-center-Y>\n"
                     "   --rover-zero-mass       <rover-center-mass>\n"
